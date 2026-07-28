@@ -97,7 +97,7 @@ export default function DashboardPage() {
       <div className="flex min-h-screen items-center justify-center bg-brand p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">GMI</CardTitle>
+            <CardTitle className="text-2xl font-bold">T&A Serv Ind</CardTitle>
             <p className="text-sm text-muted-foreground">Acesso restrito</p>
           </CardHeader>
           <CardContent>
@@ -115,8 +115,8 @@ export default function DashboardPage() {
       <header className="border-b bg-white">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <img src="/favicon.svg" alt="GMI" className="h-8 w-8" />
-            <h1 className="text-xl font-bold">GMI - Dashboard</h1>
+            <img src="/favicon.svg" alt="T&A Serv Ind" className="h-8 w-8" />
+            <h1 className="text-xl font-bold">T&A Serv Ind - Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user.full_name} ({user.role})</span>
