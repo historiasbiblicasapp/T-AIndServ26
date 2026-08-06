@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { OfflineProvider } from '@/contexts/OfflineProvider'
 import { AIProvider } from '@/features/ai/AIProvider'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import AIPage from '@/features/ai/AIPage'
 import AppLayout from '@/layouts/AppLayout'
 import LoginPage from '@/features/auth/LoginPage'
@@ -66,7 +67,9 @@ export default function App() {
       <AuthProvider>
         <OfflineProvider>
           <AIProvider>
-            <AppRoutes />
+            <ErrorBoundary>
+              <AppRoutes />
+            </ErrorBoundary>
             <Toaster />
           </AIProvider>
         </OfflineProvider>

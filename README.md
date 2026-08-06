@@ -22,7 +22,7 @@ Copie o `.env.example` para `.env` e configure:
 
 ```env
 VITE_SUPABASE_URL=https://rbkojlhvpqjfhyhonfcr.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJia29qbGh2cHFqZmh5aG9uZmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MzUwOTksImV4cCI6MjEwMDIxMTA5OX0.3GZhMJ741lXvLbn5FjVXAqijH_5eeuInlsKJSIuCAOo
 ```
 
 ### 2. Banco de Dados (Supabase)

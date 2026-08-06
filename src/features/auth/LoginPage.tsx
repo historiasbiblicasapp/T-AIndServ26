@@ -31,7 +31,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand p-4">
+    <div className="flex min-h-screen items-center justify-center bg-green-600 p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -39,9 +39,11 @@ export default function LoginPage() {
         className="w-full max-w-md"
       >
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-brand font-bold text-2xl">T&A</div>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-green-600 font-bold text-2xl">
+            T&amp;A
+          </div>
           <h1 className="text-3xl font-bold text-white">T&A Serv Ind</h1>
-          <p className="text-blue-200">Gestão da Manutenção Industrial</p>
+          <p className="text-green-100">Gestão da Manutenção Industrial</p>
         </div>
 
         <Card>
@@ -73,7 +75,7 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <Button className="w-full bg-brand hover:bg-blue-700" onClick={handleSubmit} disabled={isLoading}>
+              <Button className="w-full bg-green-800 text-white hover:bg-green-900" onClick={handleSubmit} disabled={isLoading}>
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>

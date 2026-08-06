@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { getSupabaseClient } from './supabase'
 
 function getLocalData<T>(key: string, defaultValue: T): T {
   try {
@@ -26,7 +26,7 @@ function getNextNumber(_key: string, prefix: string): string {
 
 export async function getCompanies() {
   try {
-    const { data, error } = await supabase.from('companies').select('*').order('name')
+    const { data, error } = await getSupabaseClient().from('companies').select('*').order('name')
     if (error) throw error
     return data || []
   } catch {
@@ -36,7 +36,7 @@ export async function getCompanies() {
 
 export async function createCompany(company: any) {
   try {
-    const { data, error } = await supabase.from('companies').insert(company).select().single()
+    const { data, error } = await getSupabaseClient().from('companies').insert(company).select().single()
     if (error) throw error
     return data
   } catch {
@@ -50,7 +50,7 @@ export async function createCompany(company: any) {
 
 export async function updateCompany(id: string, updates: any) {
   try {
-    const { data, error } = await supabase.from('companies').update(updates).eq('id', id).select().single()
+    const { data, error } = await getSupabaseClient().from('companies').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
   } catch {
@@ -67,7 +67,7 @@ export async function updateCompany(id: string, updates: any) {
 
 export async function getUnits(companyId?: string) {
   try {
-    let query = supabase.from('units').select('*')
+    let query = getSupabaseClient().from('units').select('*')
     if (companyId) query = query.eq('company_id', companyId)
     const { data, error } = await query.order('name')
     if (error) throw error
@@ -79,7 +79,7 @@ export async function getUnits(companyId?: string) {
 
 export async function createUnit(unit: any) {
   try {
-    const { data, error } = await supabase.from('units').insert(unit).select().single()
+    const { data, error } = await getSupabaseClient().from('units').insert(unit).select().single()
     if (error) throw error
     return data
   } catch {
@@ -93,7 +93,7 @@ export async function createUnit(unit: any) {
 
 export async function getPlants(unitId?: string) {
   try {
-    let query = supabase.from('plants').select('*')
+    let query = getSupabaseClient().from('plants').select('*')
     if (unitId) query = query.eq('unit_id', unitId)
     const { data, error } = await query.order('name')
     if (error) throw error
@@ -105,7 +105,7 @@ export async function getPlants(unitId?: string) {
 
 export async function getAreas(plantId?: string) {
   try {
-    let query = supabase.from('areas').select('*')
+    let query = getSupabaseClient().from('areas').select('*')
     if (plantId) query = query.eq('plant_id', plantId)
     const { data, error } = await query.order('name')
     if (error) throw error
@@ -117,7 +117,7 @@ export async function getAreas(plantId?: string) {
 
 export async function getLocations(sectorId?: string) {
   try {
-    let query = supabase.from('locations').select('*')
+    let query = getSupabaseClient().from('locations').select('*')
     if (sectorId) query = query.eq('sector_id', sectorId)
     const { data, error } = await query.order('name')
     if (error) throw error
@@ -129,7 +129,7 @@ export async function getLocations(sectorId?: string) {
 
 export async function getWorkOrders(filter?: any) {
   try {
-    let query = supabase.from('work_orders').select('*')
+    let query = getSupabaseClient().from('work_orders').select('*')
     
     if (filter?.company_id) query = query.eq('company_id', filter.company_id)
     if (filter?.unit_id) query = query.eq('unit_id', filter.unit_id)
@@ -156,7 +156,7 @@ export async function getWorkOrders(filter?: any) {
 
 export async function getWorkOrderById(id: string) {
   try {
-    const { data, error } = await supabase.from('work_orders').select('*').eq('id', id).single()
+    const { data, error } = await getSupabaseClient().from('work_orders').select('*').eq('id', id).single()
     if (error) throw error
     return data
   } catch {
@@ -170,7 +170,7 @@ export async function createWorkOrder(workOrder: any) {
     if (!workOrder.number) {
       workOrder.number = getNextNumber('work_orders', 'OS-')
     }
-    const { data, error } = await supabase.from('work_orders').insert(workOrder).select().single()
+    const { data, error } = await getSupabaseClient().from('work_orders').insert(workOrder).select().single()
     if (error) throw error
     return data
   } catch {
@@ -184,7 +184,7 @@ export async function createWorkOrder(workOrder: any) {
 
 export async function updateWorkOrder(id: string, updates: any) {
   try {
-    const { data, error } = await supabase.from('work_orders').update(updates).eq('id', id).select().single()
+    const { data, error } = await getSupabaseClient().from('work_orders').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
   } catch {
@@ -201,7 +201,7 @@ export async function updateWorkOrder(id: string, updates: any) {
 
 export async function deleteWorkOrder(id: string) {
   try {
-    await supabase.from('work_orders').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+    await getSupabaseClient().from('work_orders').update({ deleted_at: new Date().toISOString() }).eq('id', id)
   } catch {
     const items = getLocalData<any[]>('gmi_work_orders', [])
     const filtered = items.filter((item: any) => item.id !== id)
@@ -211,7 +211,7 @@ export async function deleteWorkOrder(id: string) {
 
 export async function getWorkOrderStatusHistory(workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('work_order_status_history').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
+    const { data, error } = await getSupabaseClient().from('work_order_status_history').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
   } catch {
@@ -221,7 +221,7 @@ export async function getWorkOrderStatusHistory(workOrderId: string) {
 
 export async function createWorkOrderStatusHistory(history: any) {
   try {
-    const { data, error } = await supabase.from('work_order_status_history').insert(history).select().single()
+    const { data, error } = await getSupabaseClient().from('work_order_status_history').insert(history).select().single()
     if (error) throw error
     return data
   } catch {
@@ -235,7 +235,7 @@ export async function createWorkOrderStatusHistory(history: any) {
 
 export async function getWorkOrderExecutantes(workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('work_order_executantes').select('*, employee:employees(*)').eq('work_order_id', workOrderId)
+    const { data, error } = await getSupabaseClient().from('work_order_executantes').select('*, employee:employees(*)').eq('work_order_id', workOrderId)
     if (error) throw error
     return data || []
   } catch {
@@ -245,7 +245,7 @@ export async function getWorkOrderExecutantes(workOrderId: string) {
 
 export async function createWorkOrderExecutante(executante: any) {
   try {
-    const { data, error } = await supabase.from('work_order_executantes').insert(executante).select().single()
+    const { data, error } = await getSupabaseClient().from('work_order_executantes').insert(executante).select().single()
     if (error) throw error
     return data
   } catch {
@@ -259,7 +259,7 @@ export async function createWorkOrderExecutante(executante: any) {
 
 export async function deleteWorkOrderExecutante(id: string, workOrderId: string) {
   try {
-    await supabase.from('work_order_executantes').delete().eq('id', id)
+    await getSupabaseClient().from('work_order_executantes').delete().eq('id', id)
   } catch {
     const items = getLocalData<any[]>(`gmi_executantes_${workOrderId}`, [])
     const filtered = items.filter((item: any) => item.id !== id)
@@ -269,7 +269,7 @@ export async function deleteWorkOrderExecutante(id: string, workOrderId: string)
 
 export async function getEscopoItems(workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('escopo_servico').select('*').eq('work_order_id', workOrderId).order('item_number')
+    const { data, error } = await getSupabaseClient().from('escopo_servico').select('*').eq('work_order_id', workOrderId).order('item_number')
     if (error) throw error
     return data || []
   } catch {
@@ -279,7 +279,7 @@ export async function getEscopoItems(workOrderId: string) {
 
 export async function createEscopoItem(item: any) {
   try {
-    const { data, error } = await supabase.from('escopo_servico').insert(item).select().single()
+    const { data, error } = await getSupabaseClient().from('escopo_servico').insert(item).select().single()
     if (error) throw error
     return data
   } catch {
@@ -293,7 +293,7 @@ export async function createEscopoItem(item: any) {
 
 export async function updateEscopoItem(id: string, updates: any, workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('escopo_servico').update(updates).eq('id', id).select().single()
+    const { data, error } = await getSupabaseClient().from('escopo_servico').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
   } catch {
@@ -310,7 +310,7 @@ export async function updateEscopoItem(id: string, updates: any, workOrderId: st
 
 export async function deleteEscopoItem(id: string, workOrderId: string) {
   try {
-    await supabase.from('escopo_servico').delete().eq('id', id)
+    await getSupabaseClient().from('escopo_servico').delete().eq('id', id)
   } catch {
     const items = getLocalData<any[]>(`gmi_escopo_${workOrderId}`, [])
     const filtered = items.filter((item: any) => item.id !== id)
@@ -320,7 +320,7 @@ export async function deleteEscopoItem(id: string, workOrderId: string) {
 
 export async function getRecursos(workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('recursos').select('*, part:parts(*)').eq('work_order_id', workOrderId)
+    const { data, error } = await getSupabaseClient().from('recursos').select('*, part:parts(*)').eq('work_order_id', workOrderId)
     if (error) throw error
     return data || []
   } catch {
@@ -330,7 +330,7 @@ export async function getRecursos(workOrderId: string) {
 
 export async function createRecurso(recurso: any) {
   try {
-    const { data, error } = await supabase.from('recursos').insert(recurso).select().single()
+    const { data, error } = await getSupabaseClient().from('recursos').insert(recurso).select().single()
     if (error) throw error
     return data
   } catch {
@@ -344,7 +344,7 @@ export async function createRecurso(recurso: any) {
 
 export async function updateRecurso(id: string, updates: any, workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('recursos').update(updates).eq('id', id).select().single()
+    const { data, error } = await getSupabaseClient().from('recursos').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
   } catch {
@@ -361,7 +361,7 @@ export async function updateRecurso(id: string, updates: any, workOrderId: strin
 
 export async function deleteRecurso(id: string, workOrderId: string) {
   try {
-    await supabase.from('recursos').delete().eq('id', id)
+    await getSupabaseClient().from('recursos').delete().eq('id', id)
   } catch {
     const items = getLocalData<any[]>(`gmi_recursos_${workOrderId}`, [])
     const filtered = items.filter((item: any) => item.id !== id)
@@ -371,7 +371,7 @@ export async function deleteRecurso(id: string, workOrderId: string) {
 
 export async function getExecucoes(workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('execucoes').select('*, user:profiles(*)').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
+    const { data, error } = await getSupabaseClient().from('execucoes').select('*, user:profiles(*)').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
   } catch {
@@ -381,7 +381,7 @@ export async function getExecucoes(workOrderId: string) {
 
 export async function createExecucao(execucao: any) {
   try {
-    const { data, error } = await supabase.from('execucoes').insert(execucao).select().single()
+    const { data, error } = await getSupabaseClient().from('execucoes').insert(execucao).select().single()
     if (error) throw error
     return data
   } catch {
@@ -395,7 +395,7 @@ export async function createExecucao(execucao: any) {
 
 export async function getAnexos(workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('anexos').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
+    const { data, error } = await getSupabaseClient().from('anexos').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
   } catch {
@@ -405,7 +405,7 @@ export async function getAnexos(workOrderId: string) {
 
 export async function createAnexo(anexo: any) {
   try {
-    const { data, error } = await supabase.from('anexos').insert(anexo).select().single()
+    const { data, error } = await getSupabaseClient().from('anexos').insert(anexo).select().single()
     if (error) throw error
     return data
   } catch {
@@ -419,7 +419,7 @@ export async function createAnexo(anexo: any) {
 
 export async function deleteAnexo(id: string, workOrderId: string) {
   try {
-    await supabase.from('anexos').delete().eq('id', id)
+    await getSupabaseClient().from('anexos').delete().eq('id', id)
   } catch {
     const items = getLocalData<any[]>(`gmi_anexos_${workOrderId}`, [])
     const filtered = items.filter((item: any) => item.id !== id)
@@ -429,7 +429,7 @@ export async function deleteAnexo(id: string, workOrderId: string) {
 
 export async function getAssinaturas(workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('assinaturas').select('*, signer:profiles(*)').eq('work_order_id', workOrderId)
+    const { data, error } = await getSupabaseClient().from('assinaturas').select('*, signer:profiles(*)').eq('work_order_id', workOrderId)
     if (error) throw error
     return data || []
   } catch {
@@ -439,7 +439,7 @@ export async function getAssinaturas(workOrderId: string) {
 
 export async function createAssinatura(assinatura: any) {
   try {
-    const { data, error } = await supabase.from('assinaturas').insert(assinatura).select().single()
+    const { data, error } = await getSupabaseClient().from('assinaturas').insert(assinatura).select().single()
     if (error) throw error
     return data
   } catch {
@@ -453,7 +453,7 @@ export async function createAssinatura(assinatura: any) {
 
 export async function getChecklistItens(checklistId?: string, workOrderId?: string) {
   try {
-    let query = supabase.from('checklist_itens').select('*')
+    let query = getSupabaseClient().from('checklist_itens').select('*')
     if (checklistId) query = query.eq('checklist_id', checklistId)
     if (workOrderId) query = query.eq('work_order_id', workOrderId)
     const { data, error } = await query.order('created_at')
@@ -466,7 +466,7 @@ export async function getChecklistItens(checklistId?: string, workOrderId?: stri
 
 export async function createChecklistItem(item: any) {
   try {
-    const { data, error } = await supabase.from('checklist_itens').insert(item).select().single()
+    const { data, error } = await getSupabaseClient().from('checklist_itens').insert(item).select().single()
     if (error) throw error
     return data
   } catch {
@@ -481,7 +481,7 @@ export async function createChecklistItem(item: any) {
 
 export async function updateChecklistItem(id: string, updates: any, key: string) {
   try {
-    const { data, error } = await supabase.from('checklist_itens').update(updates).eq('id', id).select().single()
+    const { data, error } = await getSupabaseClient().from('checklist_itens').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
   } catch {
@@ -498,7 +498,7 @@ export async function updateChecklistItem(id: string, updates: any, key: string)
 
 export async function deleteChecklistItem(id: string, key: string) {
   try {
-    await supabase.from('checklist_itens').delete().eq('id', id)
+    await getSupabaseClient().from('checklist_itens').delete().eq('id', id)
   } catch {
     const items = getLocalData<any[]>(`gmi_checklist_itens_${key}`, [])
     const filtered = items.filter((item: any) => item.id !== id)
@@ -508,7 +508,7 @@ export async function deleteChecklistItem(id: string, key: string) {
 
 export async function createHistoricoOS(historico: any) {
   try {
-    const { data, error } = await supabase.from('historico_os').insert(historico).select().single()
+    const { data, error } = await getSupabaseClient().from('historico_os').insert(historico).select().single()
     if (error) throw error
     return data
   } catch {
@@ -522,7 +522,7 @@ export async function createHistoricoOS(historico: any) {
 
 export async function getHistoricoOS(workOrderId: string) {
   try {
-    const { data, error } = await supabase.from('historico_os').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
+    const { data, error } = await getSupabaseClient().from('historico_os').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
   } catch {
@@ -532,7 +532,7 @@ export async function getHistoricoOS(workOrderId: string) {
 
 export async function getEquipments(companyId?: string) {
   try {
-    let query = supabase.from('equipments').select('*')
+    let query = getSupabaseClient().from('equipments').select('*')
     if (companyId) query = query.eq('company_id', companyId)
     const { data, error } = await query.order('name')
     if (error) throw error
@@ -544,7 +544,7 @@ export async function getEquipments(companyId?: string) {
 
 export async function createEquipment(equipment: any) {
   try {
-    const { data, error } = await supabase.from('equipments').insert(equipment).select().single()
+    const { data, error } = await getSupabaseClient().from('equipments').insert(equipment).select().single()
     if (error) throw error
     return data
   } catch {
@@ -558,7 +558,7 @@ export async function createEquipment(equipment: any) {
 
 export async function updateEquipment(id: string, updates: any) {
   try {
-    const { data, error } = await supabase.from('equipments').update(updates).eq('id', id).select().single()
+    const { data, error } = await getSupabaseClient().from('equipments').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
   } catch {
@@ -575,7 +575,7 @@ export async function updateEquipment(id: string, updates: any) {
 
 export async function deleteEquipment(id: string) {
   try {
-    const { error } = await supabase.from('equipments').delete().eq('id', id)
+    const { error } = await getSupabaseClient().from('equipments').delete().eq('id', id)
     if (error) throw error
   } catch {
     const items = getLocalData<any[]>('gmi_equipments', [])
@@ -586,7 +586,7 @@ export async function deleteEquipment(id: string) {
 
 export async function getSectors(companyId?: string, areaId?: string) {
   try {
-    let query = supabase.from('sectors').select('*')
+    let query = getSupabaseClient().from('sectors').select('*')
     if (companyId) query = query.eq('company_id', companyId)
     if (areaId) query = query.eq('area_id', areaId)
     const { data, error } = await query.order('name')
@@ -599,7 +599,7 @@ export async function getSectors(companyId?: string, areaId?: string) {
 
 export async function getEmployees(companyId?: string, sectorId?: string) {
   try {
-    let query = supabase.from('employees').select('*')
+    let query = getSupabaseClient().from('employees').select('*')
     if (companyId) query = query.eq('company_id', companyId)
     if (sectorId) query = query.eq('sector_id', sectorId)
     const { data, error } = await query.order('full_name')
@@ -612,7 +612,7 @@ export async function getEmployees(companyId?: string, sectorId?: string) {
 
 export async function createEmployee(employee: any) {
   try {
-    const { data, error } = await supabase.from('employees').insert(employee).select().single()
+    const { data, error } = await getSupabaseClient().from('employees').insert(employee).select().single()
     if (error) throw error
     return data
   } catch {
@@ -626,7 +626,7 @@ export async function createEmployee(employee: any) {
 
 export async function updateEmployee(id: string, updates: any) {
   try {
-    const { data, error } = await supabase.from('employees').update(updates).eq('id', id).select().single()
+    const { data, error } = await getSupabaseClient().from('employees').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
   } catch {
@@ -643,7 +643,7 @@ export async function updateEmployee(id: string, updates: any) {
 
 export async function deleteEmployee(id: string) {
   try {
-    const { error } = await supabase.from('employees').delete().eq('id', id)
+    const { error } = await getSupabaseClient().from('employees').delete().eq('id', id)
     if (error) throw error
   } catch {
     const items = getLocalData<any[]>('gmi_employees', [])
@@ -654,7 +654,7 @@ export async function deleteEmployee(id: string) {
 
 export async function getMaintenances(companyId?: string, equipmentId?: string) {
   try {
-    let query = supabase.from('preventive_maintenances').select('*')
+    let query = getSupabaseClient().from('preventive_maintenances').select('*')
     if (companyId) query = query.eq('company_id', companyId)
     if (equipmentId) query = query.eq('equipment_id', equipmentId)
     const { data, error } = await query.order('next_execution')
@@ -667,7 +667,7 @@ export async function getMaintenances(companyId?: string, equipmentId?: string) 
 
 export async function createMaintenance(maintenance: any) {
   try {
-    const { data, error } = await supabase.from('preventive_maintenances').insert(maintenance).select().single()
+    const { data, error } = await getSupabaseClient().from('preventive_maintenances').insert(maintenance).select().single()
     if (error) throw error
     return data
   } catch {
@@ -681,7 +681,7 @@ export async function createMaintenance(maintenance: any) {
 
 export async function updateMaintenance(id: string, updates: any) {
   try {
-    const { data, error } = await supabase.from('preventive_maintenances').update(updates).eq('id', id).select().single()
+    const { data, error } = await getSupabaseClient().from('preventive_maintenances').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
   } catch {
@@ -698,7 +698,7 @@ export async function updateMaintenance(id: string, updates: any) {
 
 export async function deleteMaintenance(id: string) {
   try {
-    const { error } = await supabase.from('preventive_maintenances').delete().eq('id', id)
+    const { error } = await getSupabaseClient().from('preventive_maintenances').delete().eq('id', id)
     if (error) throw error
   } catch {
     const items = getLocalData<any[]>('gmi_maintenances', [])
