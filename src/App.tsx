@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { OfflineProvider } from '@/contexts/OfflineProvider'
+import { AIProvider } from '@/features/ai/AIProvider'
+import AIPage from '@/features/ai/AIPage'
 import AppLayout from '@/layouts/AppLayout'
 import LoginPage from '@/features/auth/LoginPage'
 import DashboardPage from '@/features/dashboard/DashboardPage'
@@ -9,6 +12,7 @@ import OSPage from '@/pages/os/OSPage'
 import EquipmentListPage from '@/features/equipment/EquipmentListPage'
 import EmployeeListPage from '@/features/employees/EmployeeListPage'
 import MaintenancePage from '@/features/maintenance/MaintenancePage'
+import ReportsPage from '@/features/reports/ReportsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -48,6 +52,8 @@ function AppRoutes() {
         <Route path="equipment" element={<EquipmentListPage />} />
         <Route path="employees" element={<EmployeeListPage />} />
         <Route path="maintenance" element={<MaintenancePage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="ai" element={<AIPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -58,8 +64,12 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppRoutes />
-        <Toaster />
+        <OfflineProvider>
+          <AIProvider>
+            <AppRoutes />
+            <Toaster />
+          </AIProvider>
+        </OfflineProvider>
       </AuthProvider>
     </ThemeProvider>
   )
