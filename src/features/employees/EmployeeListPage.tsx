@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { getEmployees, createEmployee, deleteEmployee } from '@/services/storage'
 import { Search, Plus, Trash2 } from 'lucide-react'
-import PageHeader from '@/components/PageHeader'
+import PageHeader from '@/components/shared/PageHeader'
 
 interface Employee {
   id: string
