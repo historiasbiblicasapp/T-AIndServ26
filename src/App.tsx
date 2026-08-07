@@ -10,6 +10,7 @@ import AppLayout from '@/layouts/AppLayout'
 import LoginPage from '@/features/auth/LoginPage'
 import DashboardPage from '@/features/dashboard/DashboardPage'
 import OSPage from '@/pages/os/OSPage'
+import OSViewPage from '@/pages/os/OSViewPage'
 import EquipmentListPage from '@/features/equipment/EquipmentListPage'
 import EmployeeListPage from '@/features/employees/EmployeeListPage'
 import MaintenancePage from '@/features/maintenance/MaintenancePage'
@@ -52,6 +53,7 @@ function AppRoutes() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="work-orders" element={<OSPage />} />
+        <Route path="work-orders/:id" element={<OSViewPage />} />
         <Route path="equipment" element={<EquipmentListPage />} />
         <Route path="employees" element={<EmployeeListPage />} />
         <Route path="maintenance" element={<MaintenancePage />} />
