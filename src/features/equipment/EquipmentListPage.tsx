@@ -103,7 +103,7 @@ export default function EquipmentListPage() {
                   </select>
                 </div>
                 <div className="md:col-span-4 flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
+                  <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Cancelar</Button>
                   <Button type="submit">Salvar</Button>
                 </div>
               </form>

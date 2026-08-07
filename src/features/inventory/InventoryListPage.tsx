@@ -185,7 +185,7 @@ export default function InventoryPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setOpenMovementDialog(false)}>Cancelar</Button>
+                <Button variant="secondary" onClick={() => setOpenMovementDialog(false)}>Cancelar</Button>
                 <Button onClick={handleMovementSubmit}>Registrar</Button>
               </div>
             </DialogContent>
@@ -250,7 +250,7 @@ export default function InventoryPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setOpenItemDialog(false)}>Cancelar</Button>
+                <Button variant="secondary" onClick={() => setOpenItemDialog(false)}>Cancelar</Button>
                 <Button onClick={handleItemSubmit}>{editingItemId ? 'Salvar' : 'Criar'}</Button>
               </div>
             </DialogContent>

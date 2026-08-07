@@ -42,11 +42,11 @@ export default function AppLayout() {
       )}
 
       {!isMobile && (
-        <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
-          <div className="flex h-16 items-center justify-between px-4 border-b">
+        <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-green-700 border-r border-green-800">
+          <div className="flex h-16 items-center justify-between px-4 border-b border-green-800">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">T&A</div>
-              <span className="text-lg font-bold text-gray-900">T&A Serv Ind</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-green-700 font-bold text-sm">T&A</div>
+              <span className="text-lg font-bold text-white">T&A Serv Ind</span>
             </div>
           </div>
 
@@ -59,8 +59,8 @@ export default function AppLayout() {
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-brand/10 text-brand'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-white/20 text-white'
+                      : 'text-green-100 hover:bg-white/10 hover:text-white'
                   }`
                 }
               >
@@ -70,8 +70,8 @@ export default function AppLayout() {
             ))}
           </nav>
 
-          <div className="border-t p-4">
-            <Button variant="ghost" className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleLogout}>
+          <div className="border-t border-green-800 p-4">
+            <Button variant="ghost" className="w-full justify-start gap-2 text-white hover:text-white hover:bg-white/10" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
               Sair
             </Button>
@@ -80,32 +80,32 @@ export default function AppLayout() {
       )}
 
       <div className={!isMobile ? 'lg:pl-64' : ''}>
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-white border-b px-4 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-green-700 border-b border-green-800 px-4 lg:px-6">
           <div className="flex items-center gap-4">
             {isMobile && (
               <button className="lg:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {sidebarOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
               </button>
             )}
-            <h1 className="text-lg font-semibold text-gray-900">T&A Serv Ind</h1>
+            <h1 className="text-lg font-semibold text-white">T&A Serv Ind</h1>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-white/10" onClick={toggleTheme}>
               {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>
 
             <div className="relative">
               <Button
                 variant="ghost"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-white hover:text-white hover:bg-white/10"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white text-sm font-medium">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-green-700 text-sm font-medium">
                   {user?.full_name?.charAt(0).toUpperCase()}
                 </div>
-                <span className="hidden md:block text-sm font-medium">{user?.full_name}</span>
-                <ChevronDown className="h-4 w-4" />
+                <span className="hidden md:block text-sm font-medium text-white">{user?.full_name}</span>
+                <ChevronDown className="h-4 w-4 text-white" />
               </Button>
 
               {userMenuOpen && (
@@ -135,7 +135,7 @@ export default function AppLayout() {
         </main>
 
         {isMobile && (
-          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white">
+          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-green-800 bg-green-700">
             <div className="flex items-center justify-around">
               {bottomItems.map(item => (
                 <NavLink
@@ -144,7 +144,7 @@ export default function AppLayout() {
                   end={item.end}
                   className={({ isActive }) =>
                     `flex flex-col items-center gap-0.5 py-2 px-2 text-xs transition-colors ${
-                      isActive ? 'text-brand' : 'text-gray-500'
+                      isActive ? 'text-white' : 'text-green-100'
                     }`
                   }
                 >

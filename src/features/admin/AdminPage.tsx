@@ -156,7 +156,7 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
+              <Button variant="secondary" onClick={() => setOpenDialog(false)}>Cancelar</Button>
               <Button onClick={handleSubmit}>{editingId ? 'Salvar' : 'Criar'}</Button>
             </div>
           </DialogContent>

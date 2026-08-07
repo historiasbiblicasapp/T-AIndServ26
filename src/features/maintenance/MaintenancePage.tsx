@@ -209,7 +209,7 @@ export default function MaintenancePage() {
                   <Input type="date" value={formData.scheduled_date} onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })} />
                 </div>
                 <div className="md:col-span-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null) }}>Cancelar</Button>
+                  <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null) }}>Cancelar</Button>
                   <Button type="submit">Salvar</Button>
                 </div>
               </form>
