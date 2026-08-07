@@ -10,6 +10,7 @@ import {
   Sun,
   Moon,
   ChevronDown,
+  Home,
 } from 'lucide-react'
 import { menuItems, bottomItems } from '@/config/routes'
 
@@ -87,10 +88,19 @@ export default function AppLayout() {
                 {sidebarOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
               </button>
             )}
-            <h1 className="text-lg font-semibold text-white">T&A Serv Ind</h1>
+            <div
+              className="flex cursor-pointer items-center gap-2"
+              onClick={() => navigate('/')}
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-green-700 font-bold text-sm">T&amp;A</div>
+              <h1 className="text-lg font-semibold text-white">Serv Ind</h1>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-white/10" onClick={() => navigate('/')}>
+              <Home className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-white/10" onClick={toggleTheme}>
               {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>

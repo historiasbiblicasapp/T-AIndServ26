@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { getEquipments, getMaintenances, createMaintenance, updateMaintenance, deleteMaintenance } from '@/services/storage'
 import { Search, Plus, Edit, Trash2 } from 'lucide-react'
-import PageHeader from '@/components/shared/PageHeader'
 
 interface Equipment {
   id: string
@@ -134,8 +133,6 @@ export default function MaintenancePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PageHeader title="Manutenção" />
-
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
