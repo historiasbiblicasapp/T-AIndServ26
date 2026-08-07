@@ -14,6 +14,8 @@ import EquipmentListPage from '@/features/equipment/EquipmentListPage'
 import EmployeeListPage from '@/features/employees/EmployeeListPage'
 import MaintenancePage from '@/features/maintenance/MaintenancePage'
 import ReportsPage from '@/features/reports/ReportsPage'
+import InventoryListPage from '@/features/inventory/InventoryListPage'
+import AdminPage from '@/features/admin/AdminPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -55,6 +57,8 @@ function AppRoutes() {
         <Route path="maintenance" element={<MaintenancePage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="ai" element={<AIPage />} />
+        <Route path="inventory" element={<InventoryListPage />} />
+        <Route path="admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
