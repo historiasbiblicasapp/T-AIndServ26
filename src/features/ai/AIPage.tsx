@@ -7,6 +7,7 @@ import AIAssistant from '@/features/ai/components/AIAssistant'
 import AIInsightCard from '@/features/ai/components/AIInsightCard'
 import AISuggestionModal from '@/features/ai/components/AISuggestionModal'
 import { useAIContext } from '@/features/ai/AIProvider'
+import DashboardButton from '@/components/shared/DashboardButton'
 import { Brain, RefreshCw, AlertTriangle, Lightbulb, MessageSquare } from 'lucide-react'
 import { AISuggestion } from '@/features/ai/types'
 
@@ -44,6 +45,7 @@ export default function AIPage() {
           <p className="mt-1 text-gray-600">Análises, sugestões e assistência inteligente para manutenção.</p>
         </div>
         <div className="flex gap-2">
+          <DashboardButton />
           <Button variant="outline" onClick={runAnalysis} disabled={isLoading}>
             <Brain className="mr-2 h-4 w-4" />
             Analisar histórico

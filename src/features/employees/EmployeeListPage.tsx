@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { getEmployees, createEmployee, deleteEmployee } from '@/services/storage'
 import { Search, Plus, Trash2 } from 'lucide-react'
+import DashboardButton from '@/components/shared/DashboardButton'
 
 interface Employee {
   id: string
@@ -67,6 +68,13 @@ export default function EmployeeListPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Colaboradores</h2>
+            <p className="text-muted-foreground">Gerencie a equipe de manutenção</p>
+          </div>
+          <DashboardButton />
+        </div>
         {showForm && (
           <Card className="mb-8">
             <CardHeader>

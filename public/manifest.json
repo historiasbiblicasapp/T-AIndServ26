@@ -4,8 +4,9 @@
   "description": "Sistema de Gestão da Manutenção Industrial",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563EB",
+  "background_color": "#166534",
+  "theme_color": "#166534",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/logo.png",

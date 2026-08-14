@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { getEquipments, createEquipment, deleteEquipment } from '@/services/storage'
 import { Plus, Search, Trash2 } from 'lucide-react'
+import DashboardButton from '@/components/shared/DashboardButton'
 
 interface Equipment {
   id: string
@@ -66,6 +67,13 @@ export default function EquipmentListPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Equipamentos</h2>
+            <p className="text-muted-foreground">Gerencie os equipamentos da planta</p>
+          </div>
+          <DashboardButton />
+        </div>
         {showForm && (
           <Card className="mb-8">
             <CardHeader>

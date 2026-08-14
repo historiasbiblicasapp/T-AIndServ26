@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { OfflineProvider } from '@/contexts/OfflineProvider'
 import { AIProvider } from '@/features/ai/AIProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import LGPDConsent from '@/features/legal/LGPDConsent'
 import AIPage from '@/features/ai/AIPage'
 import AppLayout from '@/layouts/AppLayout'
 import LoginPage from '@/features/auth/LoginPage'
@@ -17,6 +18,8 @@ import MaintenancePage from '@/features/maintenance/MaintenancePage'
 import ReportsPage from '@/features/reports/ReportsPage'
 import InventoryListPage from '@/features/inventory/InventoryListPage'
 import AdminPage from '@/features/admin/AdminPage'
+import PrivacyPolicyPage from '@/features/legal/PrivacyPolicyPage'
+import TermsOfUsePage from '@/features/legal/TermsOfUsePage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -61,6 +64,8 @@ function AppRoutes() {
         <Route path="ai" element={<AIPage />} />
         <Route path="inventory" element={<InventoryListPage />} />
         <Route path="admin" element={<AdminPage />} />
+        <Route path="privacy" element={<PrivacyPolicyPage />} />
+        <Route path="terms" element={<TermsOfUsePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -75,6 +80,7 @@ export default function App() {
           <AIProvider>
             <ErrorBoundary>
               <AppRoutes />
+              <LGPDConsent />
             </ErrorBoundary>
             <Toaster />
           </AIProvider>

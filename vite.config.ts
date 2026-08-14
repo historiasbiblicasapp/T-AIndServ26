@@ -9,12 +9,15 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'logo.png', 'icons.svg'],
+      devOptions: {
+        enabled: false,
+      },
       manifest: {
         name: 'T&A - Gestão da Manutenção Industrial',
         short_name: 'T&A',
         description: 'Sistema de Gestão da Manutenção Industrial',
-        theme_color: '#2563EB',
-        background_color: '#ffffff',
+        theme_color: '#166534',
+        background_color: '#166534',
         display: 'standalone',
         start_url: '/',
         icons: [
@@ -35,6 +38,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    host: '0.0.0.0',
+    hmr: {
+      host: 'localhost',
     },
   },
 })

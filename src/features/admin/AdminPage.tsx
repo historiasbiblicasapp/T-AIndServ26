@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, Search, Edit, Trash2, Shield } from 'lucide-react'
 import { toast } from 'sonner'
+import { clearStorageModule } from '@/services/storage'
 
 interface User {
   id: string
@@ -65,6 +66,8 @@ export default function AdminPage() {
   const [openDialog, setOpenDialog] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<User>({ id: '', nome: '', email: '', perfil: 'tecnico', ativo: true, ultimoAcesso: '' })
+  const [resetModule, setResetModule] = useState('')
+  const [openResetDialog, setOpenResetDialog] = useState(false)
 
   const filtered = users.filter(user => {
     if (search && !user.nome.toLowerCase().includes(search.toLowerCase()) && !user.email.toLowerCase().includes(search.toLowerCase())) return false
@@ -104,6 +107,22 @@ export default function AdminPage() {
   const toggleActive = (id: string) => {
     setUsers(prev => prev.map(user => user.id === id ? { ...user, ativo: !user.ativo } : user))
     toast.success('Status atualizado')
+  }
+
+  const handleResetModule = () => {
+    if (!resetModule) {
+      toast.error('Selecione um módulo para resetar')
+      return
+    }
+
+    const success = clearStorageModule(resetModule)
+    if (success) {
+      toast.success(`Módulo ${resetModule} resetado com sucesso`)
+      setOpenResetDialog(false)
+      setResetModule('')
+    } else {
+      toast.error('Erro ao resetar módulo')
+    }
   }
 
   return (
@@ -254,6 +273,56 @@ export default function AdminPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-red-500" />
+            <CardTitle>Reset de Dados</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-sm text-gray-600">Zere cadastros específicos de módulos do sistema. Esta ação não pode ser desfeita.</p>
+          <Button variant="destructive" onClick={() => setOpenResetDialog(true)}>
+            Resetar Módulo
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={openResetDialog} onOpenChange={setOpenResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resetar Módulo</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Selecione o módulo para resetar</Label>
+              <Select value={resetModule} onValueChange={setResetModule}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um módulo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gmi_work_orders">Ordens de Serviço</SelectItem>
+                  <SelectItem value="gmi_equipments">Equipamentos</SelectItem>
+                  <SelectItem value="gmi_employees">Colaboradores</SelectItem>
+                  <SelectItem value="gmi_maintenances">Manutenções</SelectItem>
+                  <SelectItem value="gmi_companies">Empresas</SelectItem>
+                  <SelectItem value="gmi_units">Unidades</SelectItem>
+                  <SelectItem value="gmi_plants">Plantas</SelectItem>
+                  <SelectItem value="gmi_areas">Áreas</SelectItem>
+                  <SelectItem value="gmi_sectors">Setores</SelectItem>
+                  <SelectItem value="gmi_locations">Locais</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-sm text-red-600">Atenção: esta ação irá remover todos os registros do módulo selecionado.</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => { setOpenResetDialog(false); setResetModule('') }}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleResetModule}>Resetar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

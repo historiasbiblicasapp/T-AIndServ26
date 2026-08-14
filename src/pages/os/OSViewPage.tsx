@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { ArrowLeft, Printer, Home } from 'lucide-react'
+import DashboardButton from '@/components/shared/DashboardButton'
 
 interface OS {
   id: string
@@ -110,10 +111,13 @@ export default function OSViewPage() {
             <p className="text-xs text-gray-500">{data.numero} • {data.dataAbertura}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.print()}>
-          <Printer className="mr-2 h-4 w-4" />
-          Imprimir
-        </Button>
+        <div className="flex gap-2">
+          <DashboardButton />
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir
+          </Button>
+        </div>
       </div>
 
       <div className="mx-auto max-w-5xl p-4 print:mx-0">

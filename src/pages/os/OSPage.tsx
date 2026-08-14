@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,17 +20,17 @@ import {
 import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getWorkOrders, createWorkOrder, updateWorkOrder, deleteWorkOrder } from '@/services/storage'
 
 type Status = 'Aberta' | 'Em Andamento' | 'Concluída' | 'Cancelada'
-type Categoria = 'Corretiva' | 'Preventiva' | 'Preditiva'
 
 interface OS {
   id: string
   numero: string
   titulo: string
   equipamento: string
-  categoria: Categoria
-  status: Status
+  categoria: string
+  status: string
   responsavel: string
   dataAbertura: string
   dataConclusao?: string
@@ -45,21 +45,50 @@ interface OS {
   telefone: string
 }
 
-const INITIAL_OS: OS[] = [
-  { id: '1', numero: 'OS-001', titulo: 'Manutenção corretiva', equipamento: 'Motor Trifásico', categoria: 'Corretiva', status: 'Em Andamento', responsavel: 'João Silva', dataAbertura: '2025-01-15', cliente: 'Cliente Teste', cnpj: '00.000.000/0000-00', empresa: 'T&A Serv Ind', cidade: 'São Paulo', estado: 'SP', cep: '00000-000', numeroEndereco: '100', telefone: '(00) 0000-0000' },
-  { id: '2', numero: 'OS-002', titulo: 'Troca de filtro', equipamento: 'Compressor', categoria: 'Preventiva', status: 'Concluída', responsavel: 'Maria Souza', dataAbertura: '2025-01-16', dataConclusao: '2025-01-17', cliente: 'Cliente Teste', cnpj: '00.000.000/0000-00', empresa: 'T&A Serv Ind', cidade: 'São Paulo', estado: 'SP', cep: '00000-000', numeroEndereco: '100', telefone: '(00) 0000-0000' },
-  { id: '3', numero: 'OS-003', titulo: 'Inspeção de bombas', equipamento: 'Bomba Hidráulica', categoria: 'Preditiva', status: 'Aberta', responsavel: 'Pedro Costa', dataAbertura: '2025-01-17', cliente: 'Cliente Teste', cnpj: '00.000.000/0000-00', empresa: 'T&A Serv Ind', cidade: 'São Paulo', estado: 'SP', cep: '00000-000', numeroEndereco: '100', telefone: '(00) 0000-0000' },
-]
-
 export default function WorkOrdersPage() {
-  const [osList, setOsList] = useState<OS[]>(INITIAL_OS)
+  const [osList, setOsList] = useState<OS[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [openDialog, setOpenDialog] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<OS>({ id: '', numero: '', titulo: '', equipamento: '', categoria: 'Corretiva', status: 'Aberta', responsavel: '', dataAbertura: '', cliente: '', cnpj: '', empresa: '', cidade: '', estado: '', cep: '', numeroEndereco: '', telefone: '' })
+  const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
+
+  const loadOS = async () => {
+    try {
+      const data = await getWorkOrders()
+      const mapped = (data as any[]).map(item => ({
+        id: item.id,
+        numero: item.number || `OS-${String(item.id).slice(-3)}`,
+        titulo: item.title || '',
+        equipamento: item.equipment_id || '',
+        categoria: item.type === 'preventive' ? 'Preventiva' : item.type === 'corrective' ? 'Corretiva' : item.type === 'predictive' ? 'Preditiva' : 'Corretiva',
+        status: item.status === 'Aberta' || item.status === 'Em Andamento' || item.status === 'Concluída' || item.status === 'Cancelada' ? item.status : 'Aberta',
+        responsavel: item.assigned_to || '',
+        dataAbertura: item.planned_date || new Date().toISOString().split('T')[0],
+        observacoes: item.description || '',
+        cliente: '',
+        cnpj: '',
+        empresa: '',
+        cidade: '',
+        estado: '',
+        cep: '',
+        numeroEndereco: '',
+        telefone: '',
+      }))
+      setOsList(mapped)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao carregar ordens de serviço')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadOS()
+  }, [])
 
   const filtered = osList.filter(item => {
     if (search && !item.numero.toLowerCase().includes(search.toLowerCase()) && !item.titulo.toLowerCase().includes(search.toLowerCase())) return false
@@ -84,33 +113,63 @@ export default function WorkOrdersPage() {
     setOpenDialog(true)
   }
 
-  const handleSubmit = () => {
-    if (!form.numero || !form.titulo || !form.equipamento || !form.responsavel || !form.dataAbertura) {
-      toast.error('Preencha todos os campos obrigatórios')
-      return
-    }
+  const handleSubmit = async () => {
+    try {
+      const payload = {
+        number: form.numero,
+        title: form.titulo,
+        equipment_id: form.equipamento,
+        type: form.categoria === 'Preventiva' ? 'preventive' : form.categoria === 'Preditiva' ? 'predictive' : 'corrective',
+        status: form.status,
+        assigned_to: form.responsavel,
+        planned_date: form.dataAbertura,
+        description: form.observacoes,
+        cliente: form.cliente,
+        cnpj: form.cnpj,
+        empresa: form.empresa,
+        cidade: form.cidade,
+        estado: form.estado,
+        cep: form.cep,
+        numeroEndereco: form.numeroEndereco,
+        telefone: form.telefone,
+      }
 
-    if (editingId) {
-      setOsList(prev => prev.map(item => item.id === editingId ? { ...form, id: editingId } : item))
-      toast.success('Ordem de serviço atualizada')
-    } else {
-      const newOs: OS = { ...form, id: Date.now().toString(), numero: form.numero || `OS-${String(osList.length + 1).padStart(3, '0')}` }
-      setOsList(prev => [...prev, newOs])
-      toast.success('Ordem de serviço criada')
-    }
+      if (editingId) {
+        await updateWorkOrder(editingId, payload)
+        toast.success('Ordem de serviço atualizada')
+      } else {
+        const created = await createWorkOrder(payload)
+        setForm(prev => ({ ...prev, id: created.id }))
+        toast.success('Ordem de serviço criada')
+      }
 
-    setOpenDialog(false)
-    resetForm()
+      await loadOS()
+      setOpenDialog(false)
+      resetForm()
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar ordem de serviço')
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setOsList(prev => prev.filter(item => item.id !== id))
-    toast.success('Ordem de serviço removida')
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta ordem de serviço?')) return
+    try {
+      await deleteWorkOrder(id)
+      await loadOS()
+      toast.success('Ordem de serviço removida')
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir')
+    }
   }
 
-  const handleStatusChange = (id: string, status: Status) => {
-    setOsList(prev => prev.map(item => item.id === id ? { ...item, status, dataConclusao: status === 'Concluída' ? new Date().toISOString().split('T')[0] : item.dataConclusao } : item))
-    toast.success('Status atualizado')
+  const handleStatusChange = async (id: string, status: string) => {
+    try {
+      await updateWorkOrder(id, { status })
+      await loadOS()
+      toast.success('Status atualizado')
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar status')
+    }
   }
 
   return (
@@ -143,7 +202,7 @@ export default function WorkOrdersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Categoria</Label>
-                  <Select value={form.categoria} onValueChange={(value: Categoria) => setForm({ ...form, categoria: value })}>
+                  <Select value={form.categoria} onValueChange={(value: 'Corretiva' | 'Preventiva' | 'Preditiva') => setForm({ ...form, categoria: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -256,56 +315,60 @@ export default function WorkOrdersPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b">
-                <tr>
-                  <th className="py-2">OS</th>
-                  <th className="py-2">Título</th>
-                  <th className="py-2">Equipamento</th>
-                  <th className="py-2">Categoria</th>
-                  <th className="py-2">Status</th>
-                  <th className="py-2">Responsável</th>
-                  <th className="py-2 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={7} className="py-6 text-center text-gray-500">Nenhuma ordem de serviço encontrada</td></tr>
-                ) : (
-                  filtered.map(item => (
-                    <tr key={item.id} className="border-b last:border-0">
-                      <td className="py-2 font-medium">{item.numero}</td>
-                      <td className="py-2">{item.titulo}</td>
-                      <td className="py-2">{item.equipamento}</td>
-                      <td className="py-2">{item.categoria}</td>
-                      <td className="py-2">
-                        <Select value={item.status} onValueChange={(value: Status) => handleStatusChange(item.id, value)}>
-                          <SelectTrigger className="h-8 w-40">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Aberta">Aberta</SelectItem>
-                            <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                            <SelectItem value="Concluída">Concluída</SelectItem>
-                            <SelectItem value="Cancelada">Cancelada</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="py-2">{item.responsavel}</td>
-                      <td className="py-2">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => navigate(`/work-orders/${item.id}`)}><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Edit className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          {isLoading ? (
+            <p className="text-sm text-gray-500">Carregando...</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b">
+                  <tr>
+                    <th className="py-2">OS</th>
+                    <th className="py-2">Título</th>
+                    <th className="py-2">Equipamento</th>
+                    <th className="py-2">Categoria</th>
+                    <th className="py-2">Status</th>
+                    <th className="py-2">Responsável</th>
+                    <th className="py-2 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={7} className="py-6 text-center text-gray-500">Nenhuma ordem de serviço encontrada</td></tr>
+                  ) : (
+                    filtered.map(item => (
+                      <tr key={item.id} className="border-b last:border-0">
+                        <td className="py-2 font-medium">{item.numero}</td>
+                        <td className="py-2">{item.titulo}</td>
+                        <td className="py-2">{item.equipamento}</td>
+                        <td className="py-2">{item.categoria}</td>
+                        <td className="py-2">
+                          <Select value={item.status} onValueChange={(value: string) => handleStatusChange(item.id, value)}>
+                            <SelectTrigger className="h-8 w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Aberta">Aberta</SelectItem>
+                              <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                              <SelectItem value="Concluída">Concluída</SelectItem>
+                              <SelectItem value="Cancelada">Cancelada</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="py-2">{item.responsavel}</td>
+                        <td className="py-2">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => navigate(`/work-orders/${item.id}`)}><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Edit className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

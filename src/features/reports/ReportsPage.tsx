@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText, Table2, FileJson, FileSpreadsheet } from 'lucide-react'
+import DashboardButton from '@/components/shared/DashboardButton'
 import ReportTable from '@/features/reports/components/ReportTable'
 import { exportToPdf } from '@/features/reports/utils/pdf'
 import { exportToExcel } from '@/features/reports/utils/excel'
@@ -25,10 +26,14 @@ const COLUMNS = [
 export default function ReportsPage() {
   const [status, setStatus] = useState('all')
   const [categoria, setCategoria] = useState('all')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   const filteredRows = ROWS.filter(r => {
     if (status !== 'all' && r.status !== status) return false
     if (categoria !== 'all' && r.categoria !== categoria) return false
+    if (startDate && r.data < startDate) return false
+    if (endDate && r.data > endDate) return false
     return true
   })
 
@@ -92,9 +97,30 @@ export default function ReportsPage() {
             <option value="Preditiva">Preditiva</option>
           </select>
         </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Data Inicial</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Data Final</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm"
+          />
+        </div>
       </div>
 
-      <ReportTable title="Resultados" columns={COLUMNS} rows={filteredRows} />
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Resultados</h2>
+        <DashboardButton />
+      </div>
     </div>
   )
 }

@@ -706,3 +706,22 @@ export async function deleteMaintenance(id: string) {
     setLocalData('gmi_maintenances', filtered)
   }
 }
+
+export function clearStorageModule(moduleKey: string) {
+  try {
+    localStorage.removeItem(moduleKey)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function resetAllLocalData() {
+  try {
+    const keys = Object.keys(localStorage).filter(key => key.startsWith('gmi_'))
+    keys.forEach(key => localStorage.removeItem(key))
+    return true
+  } catch {
+    return false
+  }
+}

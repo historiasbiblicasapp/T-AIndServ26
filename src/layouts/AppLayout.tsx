@@ -76,11 +76,15 @@ export default function AppLayout() {
               <LogOut className="h-5 w-5" />
               Sair
             </Button>
+            <div className="mt-2 flex flex-col gap-1 text-xs text-green-200">
+              <a href="/privacy" className="hover:text-white">Política de Privacidade</a>
+              <a href="/terms" className="hover:text-white">Termos de Uso</a>
+            </div>
           </div>
         </aside>
       )}
 
-      <div className={!isMobile ? 'lg:pl-64' : ''}>
+      <div className={!isMobile ? 'lg:pl-64 min-h-screen flex flex-col' : 'min-h-screen flex flex-col'}>
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-green-700 border-b border-green-800 px-4 lg:px-6">
           <div className="flex items-center gap-4">
             {isMobile && (
@@ -140,7 +144,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className="p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <Outlet />
         </main>
 
@@ -162,6 +166,10 @@ export default function AppLayout() {
                   <span className="leading-none">{item.label}</span>
                 </NavLink>
               ))}
+            </div>
+            <div className="flex justify-center gap-4 border-t border-green-800 py-2 text-[10px] text-green-200">
+              <a href="/privacy" className="hover:text-white">Privacidade</a>
+              <a href="/terms" className="hover:text-white">Termos</a>
             </div>
           </nav>
         )}

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { getEquipments, getMaintenances, createMaintenance, updateMaintenance, deleteMaintenance } from '@/services/storage'
 import { Search, Plus, Edit, Trash2 } from 'lucide-react'
+import DashboardButton from '@/components/shared/DashboardButton'
 
 interface Equipment {
   id: string
@@ -139,10 +140,13 @@ export default function MaintenancePage() {
             <h2 className="text-3xl font-bold tracking-tight">Manutenção</h2>
             <p className="text-muted-foreground">Gerencie as manutenções dos equipamentos</p>
           </div>
-          <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ equipment_id: '', title: '', description: '', type: 'preventive', status: 'scheduled', priority: 'medium', scheduled_date: '', completed_date: '' }) }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Manutenção
-          </Button>
+          <div className="flex gap-2">
+            <DashboardButton />
+            <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ equipment_id: '', title: '', description: '', type: 'preventive', status: 'scheduled', priority: 'medium', scheduled_date: '', completed_date: '' }) }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Manutenção
+            </Button>
+          </div>
         </div>
 
         {showForm && (
