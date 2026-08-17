@@ -2,7 +2,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
-import { getWorkOrderById } from '@/services/storage'
+import {
+  getWorkOrderById,
+  getWorkOrderExecutantes,
+  getEscopoItems,
+  getRecursos,
+  getExecucoes,
+} from '@/services/storage'
 import { useEffect, useState } from 'react'
 
 interface OS {
@@ -54,6 +60,47 @@ export default function OSViewPage() {
           setData(null)
           return
         }
+
+        const [executantesData, escopoData, recursosData, execucoesData] = await Promise.all([
+          getWorkOrderExecutantes(id),
+          getEscopoItems(id),
+          getRecursos(id),
+          getExecucoes(id),
+        ])
+
+        const executantes = executantesData.map((e: any) => ({
+          tipo: e.type || '',
+          executante: e.employee?.full_name || '',
+          qualificacao: e.qualification || '',
+        }))
+
+        const escopo = escopoData.map((e: any) => ({
+          n: e.item_number || 0,
+          servico: e.service || '',
+          pessoas: e.people || 0,
+          horas: e.hours || '',
+        }))
+
+        const recursos = recursosData.map((r: any) => ({
+          nome: r.name || '',
+          unidade: r.unit || '',
+          quantidade: Number(r.quantity) || 0,
+          valorUnitario: Number(r.unit_value) || 0,
+          total: Number(r.total) || 0,
+        }))
+
+        const recursosTotal = recursos.reduce((acc, r) => acc + r.total, 0)
+        const maoObra = Number(item.mao_obra) || 0
+        const deslocamento = Number(item.deslocamento) || 0
+        const imposto = Number(item.imposto) || 0
+        const desconto = Number(item.desconto) || 0
+        const subtotal = recursosTotal + maoObra + deslocamento
+        const valorTotal = subtotal + imposto - desconto
+
+        const dataExecucao = execucoesData.length > 0
+          ? new Date(execucoesData[0].executed_at).toLocaleDateString('pt-BR')
+          : ''
+
         const mapped: OS = {
           id: item.id,
           numero: item.number || `OS-${String(item.id).slice(-3)}`,
@@ -73,17 +120,18 @@ export default function OSViewPage() {
           cep: item.cep || '',
           numeroEndereco: item.numero_endereco || '',
           telefone: item.telefone || '',
-          servicos: [],
-          escopo: [],
-          recursos: [],
-          maoObra: 0,
-          deslocamento: 0,
-          imposto: 0,
-          desconto: 0,
-          valorTotal: 0,
-          executante: '',
-          dataExecucao: '',
+          servicos: executantes.length > 0 ? executantes : [],
+          escopo: escopo.length > 0 ? escopo : [],
+          recursos: recursos.length > 0 ? recursos : [],
+          maoObra,
+          deslocamento,
+          imposto,
+          desconto,
+          valorTotal,
+          executante: executantes[0]?.executante || '',
+          dataExecucao,
         }
+
         setData(mapped)
       } catch {
         setData(null)
@@ -185,31 +233,43 @@ export default function OSViewPage() {
             <div>
               <p className="mb-2 text-sm font-medium">Dados do Serviço</p>
               <ul className="space-y-1 text-sm">
-                {data.servicos.map((item, idx) => (
-                  <li key={idx} className="border-b py-1 last:border-0">
-                    {item.tipo}
-                  </li>
-                ))}
+                {data.servicos.length > 0 ? (
+                  data.servicos.map((item, idx) => (
+                    <li key={idx} className="border-b py-1 last:border-0">
+                      {item.tipo || '—'}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-400">—</li>
+                )}
               </ul>
             </div>
             <div>
               <p className="mb-2 text-sm font-medium">Executantes</p>
               <ul className="space-y-1 text-sm">
-                {data.servicos.map((item, idx) => (
-                  <li key={idx} className="border-b py-1 last:border-0">
-                    {item.executante || '—'}
-                  </li>
-                ))}
+                {data.servicos.length > 0 ? (
+                  data.servicos.map((item, idx) => (
+                    <li key={idx} className="border-b py-1 last:border-0">
+                      {item.executante || '—'}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-400">—</li>
+                )}
               </ul>
             </div>
             <div>
               <p className="mb-2 text-sm font-medium">Qualificação</p>
               <ul className="space-y-1 text-sm">
-                {data.servicos.map((item, idx) => (
-                  <li key={idx} className="border-b py-1 last:border-0">
-                    {item.qualificacao || '—'}
-                  </li>
-                ))}
+                {data.servicos.length > 0 ? (
+                  data.servicos.map((item, idx) => (
+                    <li key={idx} className="border-b py-1 last:border-0">
+                      {item.qualificacao || '—'}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-400">—</li>
+                )}
               </ul>
             </div>
           </div>
@@ -228,31 +288,33 @@ export default function OSViewPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.escopo.map(item => (
-                  <tr key={item.n} className="border-b last:border-0">
-                    <td className="py-2">{item.n}º</td>
-                    <td className="py-2">{item.servico}</td>
-                    <td className="py-2 text-center">{item.pessoas}</td>
-                    <td className="py-2 text-center">{item.horas}</td>
+                {data.escopo.length > 0 ? (
+                  data.escopo.map((item) => (
+                    <tr key={item.n} className="border-b last:border-0">
+                      <td className="py-2">{item.n}º</td>
+                      <td className="py-2">{item.servico}</td>
+                      <td className="py-2 text-center">{item.pessoas}</td>
+                      <td className="py-2 text-center">{item.horas}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-gray-500">
+                      Nenhum item de escopo cadastrado
+                    </td>
                   </tr>
-                ))}
-                {Array.from({ length: Math.max(0, 7 - data.escopo.length) }).map((_, idx) => (
-                  <tr key={`empty-${idx}`} className="border-b last:border-0">
-                    <td className="py-2">{data.escopo.length + idx + 1}º</td>
-                    <td className="py-2 text-gray-400">—</td>
-                    <td className="py-2 text-center">—</td>
-                    <td className="py-2 text-center">—</td>
-                  </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="mb-6 rounded-lg border p-4">
-          <h2 className="mb-2 font-semibold">Execução</h2>
-          <p className="text-sm">Já realizado ({data.dataExecucao})</p>
-        </div>
+        {data.dataExecucao && (
+          <div className="mb-6 rounded-lg border p-4">
+            <h2 className="mb-2 font-semibold">Execução</h2>
+            <p className="text-sm">Já realizado ({data.dataExecucao})</p>
+          </div>
+        )}
 
         <div className="mb-6 rounded-lg border p-4">
           <h2 className="mb-3 font-semibold">Recursos</h2>
@@ -268,15 +330,23 @@ export default function OSViewPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.recursos.map((item, idx) => (
-                  <tr key={idx} className="border-b last:border-0">
-                    <td className="py-2">{item.nome}</td>
-                    <td className="py-2">{item.unidade}</td>
-                    <td className="py-2 text-center">{item.quantidade}</td>
-                    <td className="py-2 text-right">R$ {item.valorUnitario.toFixed(2)}</td>
-                    <td className="py-2 text-right">R$ {item.total.toFixed(2)}</td>
+                {data.recursos.length > 0 ? (
+                  data.recursos.map((item, idx) => (
+                    <tr key={idx} className="border-b last:border-0">
+                      <td className="py-2">{item.nome}</td>
+                      <td className="py-2">{item.unidade}</td>
+                      <td className="py-2 text-center">{item.quantidade}</td>
+                      <td className="py-2 text-right">R$ {item.valorUnitario.toFixed(2)}</td>
+                      <td className="py-2 text-right">R$ {item.total.toFixed(2)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-4 text-center text-gray-500">
+                      Nenhum recurso cadastrado
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
