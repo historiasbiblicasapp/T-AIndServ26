@@ -2,6 +2,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
+import { getWorkOrderById } from '@/services/storage'
+import { useEffect, useState } from 'react'
 
 interface OS {
   id: string
@@ -37,59 +39,68 @@ interface OS {
   assinaturaCliente?: string
 }
 
-const MOCK: Record<string, OS> = {
-  '1': {
-    id: '1',
-    numero: 'OS-001',
-    titulo: 'Manutenção corretiva',
-    equipamento: 'Motor Trifásico',
-    categoria: 'Corretiva',
-    status: 'Em Andamento',
-    responsavel: 'João Silva',
-    dataAbertura: '2025-01-15',
-    cliente: 'Cliente Teste',
-    cnpj: '00.000.000/0000-00',
-    empresa: 'T&A Serv Ind',
-    endereco: 'Rua das Flores',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    cep: '00000-000',
-    numeroEndereco: '100',
-    telefone: '(00) 0000-0000',
-    servicos: [
-      { tipo: 'Elétrica', executante: 'Profissional de Serviços Gerais', qualificacao: 'Serviços Gerais' },
-      { tipo: 'Mecânica', executante: 'Profissional de Manutenção Elétrica', qualificacao: 'Elétrica' },
-      { tipo: 'Instrumentação', executante: '', qualificacao: '' },
-      { tipo: 'Automação', executante: '', qualificacao: '' },
-      { tipo: 'Serviços Gerais', executante: '', qualificacao: '' },
-      { tipo: 'Civil', executante: '', qualificacao: '' },
-      { tipo: 'Outros: _________________', executante: '', qualificacao: '' },
-    ],
-    escopo: [
-      { n: 1, servico: 'Realização de limpeza do local', pessoas: 1, horas: '3h' },
-      { n: 2, servico: 'Verificação de equipamentos', pessoas: 1, horas: '2h' },
-      { n: 3, servico: 'Reparo no equipamento X', pessoas: 1, horas: '1h' },
-      { n: 4, servico: 'Reparo no equipamento Y', pessoas: 1, horas: '1h' },
-      { n: 5, servico: 'Reparo no equipamento Z', pessoas: 1, horas: '0,5h' },
-    ],
-    recursos: [
-      { nome: 'Insumos', unidade: 'Un.', quantidade: 1, valorUnitario: 100, total: 100 },
-      { nome: 'Produto X', unidade: 'Un.', quantidade: 1, valorUnitario: 75, total: 75 },
-    ],
-    maoObra: 247.5,
-    deslocamento: 205.5,
-    imposto: 100.48,
-    desconto: 0,
-    valorTotal: 728.48,
-    executante: 'Profissional de Serviços Gerais',
-    dataExecucao: '28/07/2026',
-  },
-}
-
 export default function OSViewPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const data = id ? MOCK[id] : null
+  const [data, setData] = useState<OS | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      if (!id) return
+      try {
+        const item = await getWorkOrderById(id)
+        if (!item) {
+          setData(null)
+          return
+        }
+        const mapped: OS = {
+          id: item.id,
+          numero: item.number || `OS-${String(item.id).slice(-3)}`,
+          titulo: item.title || '',
+          equipamento: item.equipment_id || '',
+          categoria: item.type === 'preventive' ? 'Preventiva' : item.type === 'predictive' ? 'Preditiva' : 'Corretiva',
+          status: item.status || 'Aberta',
+          responsavel: item.assigned_to || '',
+          dataAbertura: item.planned_date || '',
+          observacoes: item.description || '',
+          cliente: item.cliente || '',
+          cnpj: item.cnpj || '',
+          empresa: item.empresa || '',
+          endereco: item.endereco || '',
+          cidade: item.cidade || '',
+          estado: item.estado || '',
+          cep: item.cep || '',
+          numeroEndereco: item.numero_endereco || '',
+          telefone: item.telefone || '',
+          servicos: [],
+          escopo: [],
+          recursos: [],
+          maoObra: 0,
+          deslocamento: 0,
+          imposto: 0,
+          desconto: 0,
+          valorTotal: 0,
+          executante: '',
+          dataExecucao: '',
+        }
+        setData(mapped)
+      } catch {
+        setData(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="p-4">
+        <p className="text-gray-600">Carregando...</p>
+      </div>
+    )
+  }
 
   if (!data) {
     return (

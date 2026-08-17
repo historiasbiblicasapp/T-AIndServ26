@@ -500,6 +500,7 @@ export default function WorkOrdersPage() {
                   <tr>
                     <th className="py-2">OS</th>
                     <th className="py-2">Título</th>
+                    <th className="py-2">Cliente</th>
                     <th className="py-2">Equipamento</th>
                     <th className="py-2">Categoria</th>
                     <th className="py-2">Status</th>
@@ -510,7 +511,7 @@ export default function WorkOrdersPage() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-6 text-center text-gray-500">
+                      <td colSpan={8} className="py-6 text-center text-gray-500">
                         Nenhuma ordem de serviço encontrada
                       </td>
                     </tr>
@@ -521,6 +522,7 @@ export default function WorkOrdersPage() {
                         <tr key={item.id} className="border-b last:border-0">
                           <td className="py-2 font-medium">{item.numero}</td>
                           <td className="py-2">{item.titulo}</td>
+                          <td className="py-2">{item.cliente}</td>
                           <td className="py-2">{equipment ? `${equipment.name} (${equipment.code})` : item.equipamento}</td>
                           <td className="py-2">{item.categoria}</td>
                           <td className="py-2">
