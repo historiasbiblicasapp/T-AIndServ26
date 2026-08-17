@@ -1,236 +1,7 @@
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- Migration delta: clients, brazilian_cities, work_orders fields
+-- Run this in Supabase SQL Editor if the main schema already exists.
 
--- Companies
-create table if not exists public.companies (
-  id uuid primary key default uuid_generate_v4(),
-  name text not null,
-  cnpj text,
-  address text,
-  city text,
-  state text,
-  zip_code text,
-  phone text,
-  email text,
-  created_at timestamp with time zone default now(),
-  updated_at timestamp with time zone default now()
-);
-
--- Units
-create table if not exists public.units (
-  id uuid primary key default uuid_generate_v4(),
-  company_id uuid references public.companies(id) on delete cascade,
-  name text not null,
-  code text,
-  created_at timestamp with time zone default now()
-);
-
--- Plants
-create table if not exists public.plants (
-  id uuid primary key default uuid_generate_v4(),
-  unit_id uuid references public.units(id) on delete cascade,
-  name text not null,
-  code text,
-  created_at timestamp with time zone default now()
-);
-
--- Areas
-create table if not exists public.areas (
-  id uuid primary key default uuid_generate_v4(),
-  plant_id uuid references public.plants(id) on delete cascade,
-  name text not null,
-  code text,
-  created_at timestamp with time zone default now()
-);
-
--- Sectors
-create table if not exists public.sectors (
-  id uuid primary key default uuid_generate_v4(),
-  company_id uuid references public.companies(id) on delete cascade,
-  area_id uuid references public.areas(id) on delete set null,
-  name text not null,
-  code text,
-  created_at timestamp with time zone default now()
-);
-
--- Locations
-create table if not exists public.locations (
-  id uuid primary key default uuid_generate_v4(),
-  sector_id uuid references public.sectors(id) on delete cascade,
-  name text not null,
-  code text,
-  created_at timestamp with time zone default now()
-);
-
--- Equipments
-create table if not exists public.equipments (
-  id uuid primary key default uuid_generate_v4(),
-  company_id uuid references public.companies(id) on delete cascade,
-  name text not null,
-  code text not null,
-  sector text,
-  status text default 'operational',
-  created_at timestamp with time zone default now()
-);
-
--- Employees
-create table if not exists public.employees (
-  id uuid primary key default uuid_generate_v4(),
-  company_id uuid references public.companies(id) on delete cascade,
-  full_name text not null,
-  email text not null,
-  phone text,
-  role text,
-  department text,
-  sector_id uuid references public.sectors(id) on delete set null,
-  created_at timestamp with time zone default now()
-);
-
--- Preventive Maintenances
-create table if not exists public.preventive_maintenances (
-  id uuid primary key default uuid_generate_v4(),
-  company_id uuid references public.companies(id) on delete cascade,
-  equipment_id uuid references public.equipments(id) on delete set null,
-  title text not null,
-  description text,
-  type text default 'preventive',
-  status text default 'scheduled',
-  priority text default 'medium',
-  scheduled_date text,
-  completed_date text,
-  created_at timestamp with time zone default now()
-);
-
--- Work Orders
-create table if not exists public.work_orders (
-  id uuid primary key default uuid_generate_v4(),
-  company_id uuid references public.companies(id) on delete set null,
-  unit_id uuid references public.units(id) on delete set null,
-  plant_id uuid references public.plants(id) on delete set null,
-  area_id uuid references public.areas(id) on delete set null,
-  sector_id uuid references public.sectors(id) on delete set null,
-  equipment_id uuid references public.equipments(id) on delete set null,
-  client_id uuid references public.clients(id) on delete set null,
-  assigned_to uuid references public.employees(id) on delete set null,
-  number text,
-  title text,
-  status text default 'Aberta',
-  type text,
-  priority text,
-  planned_date text,
-  description text,
-  cliente text,
-  cnpj text,
-  empresa text,
-  cidade text,
-  estado text,
-  cep text,
-  numero_endereco text,
-  telefone text,
-  created_at timestamp with time zone default now()
-);
-
--- Work Order Status History
-create table if not exists public.work_order_status_history (
-  id uuid primary key default uuid_generate_v4(),
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  old_status text,
-  new_status text,
-  notes text,
-  created_at timestamp with time zone default now()
-);
-
--- Work Order Executantes
-create table if not exists public.work_order_executantes (
-  id uuid primary key default uuid_generate_v4(),
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  employee_id uuid references public.employees(id) on delete set null,
-  type text,
-  qualification text,
-  created_at timestamp with time zone default now()
-);
-
--- Escopo Servico
-create table if not exists public.escopo_servico (
-  id uuid primary key default uuid_generate_v4(),
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  item_number integer,
-  service text,
-  people integer,
-  hours text,
-  created_at timestamp with time zone default now()
-);
-
--- Recursos
-create table if not exists public.recursos (
-  id uuid primary key default uuid_generate_v4(),
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  name text,
-  unit text,
-  quantity numeric,
-  unit_value numeric,
-  total numeric,
-  created_at timestamp with time zone default now()
-);
-
--- Execucoes
-create table if not exists public.execucoes (
-  id uuid primary key default uuid_generate_v4(),
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  user_id uuid references public.profiles(id) on delete set null,
-  executed_at timestamp with time zone default now()
-);
-
--- Anexos
-create table if not exists public.anexos (
-  id uuid primary key default uuid_generate_v4(),
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  file_name text,
-  file_path text,
-  file_size integer,
-  mime_type text,
-  created_at timestamp with time zone default now()
-);
-
--- Assinaturas
-create table if not exists public.assinaturas (
-  id uuid primary key default uuid_generate_v4(),
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  signer_id uuid references public.profiles(id) on delete set null,
-  signature_data text,
-  signed_at timestamp with time zone default now()
-);
-
--- Checklist Itens
-create table if not exists public.checklist_itens (
-  id uuid primary key default uuid_generate_v4(),
-  checklist_id uuid,
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  title text,
-  checked boolean default false,
-  created_at timestamp with time zone default now()
-);
-
--- Historico OS
-create table if not exists public.historico_os (
-  id uuid primary key default uuid_generate_v4(),
-  work_order_id uuid references public.work_orders(id) on delete cascade,
-  action text,
-  description text,
-  user_id uuid references public.profiles(id) on delete set null,
-  created_at timestamp with time zone default now()
-);
-
--- Profiles
-create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  email text,
-  full_name text,
-  role text default 'user',
-  created_at timestamp with time zone default now()
-);
-
--- Clients
+-- 1) Create new tables first
 create table if not exists public.clients (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
@@ -250,7 +21,6 @@ create table if not exists public.clients (
   updated_at timestamp with time zone default now()
 );
 
--- Brazilian Cities
 create table if not exists public.brazilian_cities (
   id uuid primary key default uuid_generate_v4(),
   city_name text not null,
@@ -259,31 +29,141 @@ create table if not exists public.brazilian_cities (
   ibge_code text
 );
 
--- Enable Row Level Security
-alter table public.companies enable row level security;
-alter table public.units enable row level security;
-alter table public.plants enable row level security;
-alter table public.areas enable row level security;
-alter table public.locations enable row level security;
-alter table public.sectors enable row level security;
-alter table public.equipments enable row level security;
-alter table public.employees enable row level security;
-alter table public.preventive_maintenances enable row level security;
-alter table public.work_orders enable row level security;
-alter table public.work_order_status_history enable row level security;
-alter table public.work_order_executantes enable row level security;
-alter table public.escopo_servico enable row level security;
-alter table public.recursos enable row level security;
-alter table public.execucoes enable row level security;
-alter table public.anexos enable row level security;
-alter table public.assinaturas enable row level security;
-alter table public.checklist_itens enable row level security;
-alter table public.historico_os enable row level security;
-alter table public.profiles enable row level security;
-alter table public.clients enable row level security;
-alter table public.brazilian_cities enable row level security;
+-- 2) Now add new columns to work_orders
+alter table public.work_orders add column if not exists client_id uuid references public.clients(id) on delete set null;
+alter table public.work_orders add column if not exists description text;
+alter table public.work_orders add column if not exists cliente text;
+alter table public.work_orders add column if not exists cnpj text;
+alter table public.work_orders add column if not exists empresa text;
+alter table public.work_orders add column if not exists cidade text;
+alter table public.work_orders add column if not exists estado text;
+alter table public.work_orders add column if not exists cep text;
+alter table public.work_orders add column if not exists numero_endereco text;
+alter table public.work_orders add column if not exists telefone text;
 
--- Policies
+-- 3) Enable RLS on new tables if not already enabled
+do $$
+begin
+  if not exists (select 1 from pg_tables where tablename = 'clients' and rowsecurity = true) then
+    alter table public.clients enable row level security;
+  end if;
+  if not exists (select 1 from pg_tables where tablename = 'brazilian_cities' and rowsecurity = true) then
+    alter table public.brazilian_cities enable row level security;
+  end if;
+end;
+$$;
+
+-- 4) Recreate policies safely
+drop policy if exists "Allow public read companies" on public.companies;
+drop policy if exists "Allow public insert companies" on public.companies;
+drop policy if exists "Allow public update companies" on public.companies;
+drop policy if exists "Allow public delete companies" on public.companies;
+
+drop policy if exists "Allow public read units" on public.units;
+drop policy if exists "Allow public insert units" on public.units;
+drop policy if exists "Allow public update units" on public.units;
+drop policy if exists "Allow public delete units" on public.units;
+
+drop policy if exists "Allow public read plants" on public.plants;
+drop policy if exists "Allow public insert plants" on public.plants;
+drop policy if exists "Allow public update plants" on public.plants;
+drop policy if exists "Allow public delete plants" on public.plants;
+
+drop policy if exists "Allow public read areas" on public.areas;
+drop policy if exists "Allow public insert areas" on public.areas;
+drop policy if exists "Allow public update areas" on public.areas;
+drop policy if exists "Allow public delete areas" on public.areas;
+
+drop policy if exists "Allow public read locations" on public.locations;
+drop policy if exists "Allow public insert locations" on public.locations;
+drop policy if exists "Allow public update locations" on public.locations;
+drop policy if exists "Allow public delete locations" on public.locations;
+
+drop policy if exists "Allow public read sectors" on public.sectors;
+drop policy if exists "Allow public insert sectors" on public.sectors;
+drop policy if exists "Allow public update sectors" on public.sectors;
+drop policy if exists "Allow public delete sectors" on public.sectors;
+
+drop policy if exists "Allow public read equipments" on public.equipments;
+drop policy if exists "Allow public insert equipments" on public.equipments;
+drop policy if exists "Allow public update equipments" on public.equipments;
+drop policy if exists "Allow public delete equipments" on public.equipments;
+
+drop policy if exists "Allow public read employees" on public.employees;
+drop policy if exists "Allow public insert employees" on public.employees;
+drop policy if exists "Allow public update employees" on public.employees;
+drop policy if exists "Allow public delete employees" on public.employees;
+
+drop policy if exists "Allow public read preventive_maintenances" on public.preventive_maintenances;
+drop policy if exists "Allow public insert preventive_maintenances" on public.preventive_maintenances;
+drop policy if exists "Allow public update preventive_maintenances" on public.preventive_maintenances;
+drop policy if exists "Allow public delete preventive_maintenances" on public.preventive_maintenances;
+
+drop policy if exists "Allow public read work_orders" on public.work_orders;
+drop policy if exists "Allow public insert work_orders" on public.work_orders;
+drop policy if exists "Allow public update work_orders" on public.work_orders;
+drop policy if exists "Allow public delete work_orders" on public.work_orders;
+
+drop policy if exists "Allow public read work_order_status_history" on public.work_order_status_history;
+drop policy if exists "Allow public insert work_order_status_history" on public.work_order_status_history;
+drop policy if exists "Allow public update work_order_status_history" on public.work_order_status_history;
+drop policy if exists "Allow public delete work_order_status_history" on public.work_order_status_history;
+
+drop policy if exists "Allow public read work_order_executantes" on public.work_order_executantes;
+drop policy if exists "Allow public insert work_order_executantes" on public.work_order_executantes;
+drop policy if exists "Allow public update work_order_executantes" on public.work_order_executantes;
+drop policy if exists "Allow public delete work_order_executantes" on public.work_order_executantes;
+
+drop policy if exists "Allow public read escopo_servico" on public.escopo_servico;
+drop policy if exists "Allow public insert escopo_servico" on public.escopo_servico;
+drop policy if exists "Allow public update escopo_servico" on public.escopo_servico;
+drop policy if exists "Allow public delete escopo_servico" on public.escopo_servico;
+
+drop policy if exists "Allow public read recursos" on public.recursos;
+drop policy if exists "Allow public insert recursos" on public.recursos;
+drop policy if exists "Allow public update recursos" on public.recursos;
+drop policy if exists "Allow public delete recursos" on public.recursos;
+
+drop policy if exists "Allow public read execucoes" on public.execucoes;
+drop policy if exists "Allow public insert execucoes" on public.execucoes;
+drop policy if exists "Allow public update execucoes" on public.execucoes;
+drop policy if exists "Allow public delete execucoes" on public.execucoes;
+
+drop policy if exists "Allow public read anexos" on public.anexos;
+drop policy if exists "Allow public insert anexos" on public.anexos;
+drop policy if exists "Allow public update anexos" on public.anexos;
+drop policy if exists "Allow public delete anexos" on public.anexos;
+
+drop policy if exists "Allow public read assinaturas" on public.assinaturas;
+drop policy if exists "Allow public insert assinaturas" on public.assinaturas;
+drop policy if exists "Allow public update assinaturas" on public.assinaturas;
+drop policy if exists "Allow public delete assinaturas" on public.assinaturas;
+
+drop policy if exists "Allow public read checklist_itens" on public.checklist_itens;
+drop policy if exists "Allow public insert checklist_itens" on public.checklist_itens;
+drop policy if exists "Allow public update checklist_itens" on public.checklist_itens;
+drop policy if exists "Allow public delete checklist_itens" on public.checklist_itens;
+
+drop policy if exists "Allow public read historico_os" on public.historico_os;
+drop policy if exists "Allow public insert historico_os" on public.historico_os;
+drop policy if exists "Allow public update historico_os" on public.historico_os;
+drop policy if exists "Allow public delete historico_os" on public.historico_os;
+
+drop policy if exists "Allow public read profiles" on public.profiles;
+drop policy if exists "Allow public insert profiles" on public.profiles;
+drop policy if exists "Allow public update profiles" on public.profiles;
+drop policy if exists "Allow public delete profiles" on public.profiles;
+
+drop policy if exists "Allow public read clients" on public.clients;
+drop policy if exists "Allow public insert clients" on public.clients;
+drop policy if exists "Allow public update clients" on public.clients;
+drop policy if exists "Allow public delete clients" on public.clients;
+
+drop policy if exists "Allow public read brazilian_cities" on public.brazilian_cities;
+drop policy if exists "Allow public insert brazilian_cities" on public.brazilian_cities;
+drop policy if exists "Allow public update brazilian_cities" on public.brazilian_cities;
+drop policy if exists "Allow public delete brazilian_cities" on public.brazilian_cities;
+
 create policy "Allow public read companies" on public.companies for select using (true);
 create policy "Allow public insert companies" on public.companies for insert with check (true);
 create policy "Allow public update companies" on public.companies for update using (true);
@@ -394,6 +274,7 @@ create policy "Allow public insert brazilian_cities" on public.brazilian_cities 
 create policy "Allow public update brazilian_cities" on public.brazilian_cities for update using (true);
 create policy "Allow public delete brazilian_cities" on public.brazilian_cities for delete using (true);
 
+-- 5) Seed cities if empty
 insert into public.brazilian_cities (city_name, state, state_name, ibge_code) values
 ('São Paulo', 'SP', 'São Paulo', '3550308'),
 ('Rio de Janeiro', 'RJ', 'Rio de Janeiro', '3304557'),

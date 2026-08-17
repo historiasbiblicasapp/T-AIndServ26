@@ -707,6 +707,90 @@ export async function deleteMaintenance(id: string) {
   }
 }
 
+export async function getClients() {
+  try {
+    const { data, error } = await getSupabaseClient().from('clients').select('*').order('name')
+    if (error) throw error
+    return data || []
+  } catch {
+    return getLocalData<any[]>('gmi_clients', [])
+  }
+}
+
+export async function createClient(client: any) {
+  try {
+    const { data, error } = await getSupabaseClient().from('clients').insert(client).select().single()
+    if (error) throw error
+    return data
+  } catch {
+    const items = getLocalData<any[]>('gmi_clients', [])
+    const newItem = { ...client, id: generateId() }
+    items.push(newItem)
+    setLocalData('gmi_clients', items)
+    return newItem
+  }
+}
+
+export async function updateClient(id: string, updates: any) {
+  try {
+    const { data, error } = await getSupabaseClient().from('clients').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  } catch {
+    const items = getLocalData<any[]>('gmi_clients', [])
+    const index = items.findIndex((item: any) => item.id === id)
+    if (index >= 0) {
+      items[index] = { ...items[index], ...updates }
+      setLocalData('gmi_clients', items)
+      return items[index]
+    }
+    return null
+  }
+}
+
+export async function deleteClient(id: string) {
+  try {
+    const { error } = await getSupabaseClient().from('clients').delete().eq('id', id)
+    if (error) throw error
+  } catch {
+    const items = getLocalData<any[]>('gmi_clients', [])
+    const filtered = items.filter((item: any) => item.id !== id)
+    setLocalData('gmi_clients', filtered)
+  }
+}
+
+export async function getBrazilianCities(state?: string) {
+  try {
+    let query = getSupabaseClient().from('brazilian_cities').select('*').order('city_name')
+    if (state) query = query.eq('state', state)
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  } catch {
+    return getLocalData<any[]>('gmi_brazilian_cities', [])
+  }
+}
+
+export async function searchCep(cep: string) {
+  try {
+    const cleanCep = cep.replace(/\D/g, '')
+    if (cleanCep.length !== 8) return null
+    const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+    if (!response.ok) return null
+    const data = await response.json()
+    if (data.erro) return null
+    return {
+      address: data.logradouro || '',
+      neighborhood: data.bairro || '',
+      city: data.localidade || '',
+      state: data.uf || '',
+      zip_code: data.cep || cep,
+    }
+  } catch {
+    return null
+  }
+}
+
 export function clearStorageModule(moduleKey: string) {
   try {
     localStorage.removeItem(moduleKey)

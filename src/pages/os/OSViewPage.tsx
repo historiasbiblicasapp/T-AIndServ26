@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Printer, Home } from 'lucide-react'
+import { ArrowLeft, Printer } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
 
 interface OS {
@@ -17,6 +17,7 @@ interface OS {
   cliente: string
   cnpj: string
   empresa: string
+  endereco: string
   cidade: string
   estado: string
   cep: string
@@ -49,6 +50,7 @@ const MOCK: Record<string, OS> = {
     cliente: 'Cliente Teste',
     cnpj: '00.000.000/0000-00',
     empresa: 'T&A Serv Ind',
+    endereco: 'Rua das Flores',
     cidade: 'São Paulo',
     estado: 'SP',
     cep: '00000-000',
@@ -148,16 +150,16 @@ export default function OSViewPage() {
               <p className="text-sm font-medium">{data.empresa}</p>
             </div>
             <div>
+              <p className="text-xs text-gray-500">Endereço</p>
+              <p className="text-sm font-medium">{data.endereco} {data.numeroEndereco ? `, ${data.numeroEndereco}` : ''}</p>
+            </div>
+            <div>
               <p className="text-xs text-gray-500">Cidade/Estado</p>
               <p className="text-sm font-medium">{data.cidade} / {data.estado}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">CEP</p>
               <p className="text-sm font-medium">{data.cep}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Número</p>
-              <p className="text-sm font-medium">{data.numeroEndereco}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Telefone</p>

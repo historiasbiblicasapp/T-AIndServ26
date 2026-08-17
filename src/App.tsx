@@ -20,6 +20,7 @@ import InventoryListPage from '@/features/inventory/InventoryListPage'
 import AdminPage from '@/features/admin/AdminPage'
 import PrivacyPolicyPage from '@/features/legal/PrivacyPolicyPage'
 import TermsOfUsePage from '@/features/legal/TermsOfUsePage'
+import ClientListPage from '@/features/clients/ClientListPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -59,6 +60,7 @@ function AppRoutes() {
         <Route path="work-orders/:id" element={<OSViewPage />} />
         <Route path="equipment" element={<EquipmentListPage />} />
         <Route path="employees" element={<EmployeeListPage />} />
+        <Route path="clients" element={<ClientListPage />} />
         <Route path="maintenance" element={<MaintenancePage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="ai" element={<AIPage />} />
