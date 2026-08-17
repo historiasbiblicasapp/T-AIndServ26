@@ -2,13 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
-import {
-  getWorkOrderById,
-  getWorkOrderExecutantes,
-  getEscopoItems,
-  getRecursos,
-  getExecucoes,
-} from '@/services/storage'
+import { getWorkOrderById } from '@/services/storage'
 import { useEffect, useState } from 'react'
 
 interface OS {
@@ -20,7 +14,6 @@ interface OS {
   status: string
   responsavel: string
   dataAbertura: string
-  dataConclusao?: string
   observacoes?: string
   cliente: string
   cnpj: string
@@ -60,47 +53,6 @@ export default function OSViewPage() {
           setData(null)
           return
         }
-
-        const [executantesData, escopoData, recursosData, execucoesData] = await Promise.all([
-          getWorkOrderExecutantes(id),
-          getEscopoItems(id),
-          getRecursos(id),
-          getExecucoes(id),
-        ])
-
-        const executantes = executantesData.map((e: any) => ({
-          tipo: e.type || '',
-          executante: e.employee?.full_name || '',
-          qualificacao: e.qualification || '',
-        }))
-
-        const escopo = escopoData.map((e: any) => ({
-          n: e.item_number || 0,
-          servico: e.service || '',
-          pessoas: e.people || 0,
-          horas: e.hours || '',
-        }))
-
-        const recursos = recursosData.map((r: any) => ({
-          nome: r.name || '',
-          unidade: r.unit || '',
-          quantidade: Number(r.quantity) || 0,
-          valorUnitario: Number(r.unit_value) || 0,
-          total: Number(r.total) || 0,
-        }))
-
-        const recursosTotal = recursos.reduce((acc, r) => acc + r.total, 0)
-        const maoObra = Number(item.mao_obra) || 0
-        const deslocamento = Number(item.deslocamento) || 0
-        const imposto = Number(item.imposto) || 0
-        const desconto = Number(item.desconto) || 0
-        const subtotal = recursosTotal + maoObra + deslocamento
-        const valorTotal = subtotal + imposto - desconto
-
-        const dataExecucao = execucoesData.length > 0
-          ? new Date(execucoesData[0].executed_at).toLocaleDateString('pt-BR')
-          : ''
-
         const mapped: OS = {
           id: item.id,
           numero: item.number || `OS-${String(item.id).slice(-3)}`,
@@ -120,18 +72,17 @@ export default function OSViewPage() {
           cep: item.cep || '',
           numeroEndereco: item.numero_endereco || '',
           telefone: item.telefone || '',
-          servicos: executantes.length > 0 ? executantes : [],
-          escopo: escopo.length > 0 ? escopo : [],
-          recursos: recursos.length > 0 ? recursos : [],
-          maoObra,
-          deslocamento,
-          imposto,
-          desconto,
-          valorTotal,
-          executante: executantes[0]?.executante || '',
-          dataExecucao,
+          servicos: [],
+          escopo: [],
+          recursos: [],
+          maoObra: 0,
+          deslocamento: 0,
+          imposto: 0,
+          desconto: 0,
+          valorTotal: 0,
+          executante: '',
+          dataExecucao: '',
         }
-
         setData(mapped)
       } catch {
         setData(null)
@@ -233,43 +184,31 @@ export default function OSViewPage() {
             <div>
               <p className="mb-2 text-sm font-medium">Dados do Serviço</p>
               <ul className="space-y-1 text-sm">
-                {data.servicos.length > 0 ? (
-                  data.servicos.map((item, idx) => (
-                    <li key={idx} className="border-b py-1 last:border-0">
-                      {item.tipo || '—'}
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-gray-400">—</li>
-                )}
+                {data.servicos.map((item, idx) => (
+                  <li key={idx} className="border-b py-1 last:border-0">
+                    {item.tipo || '—'}
+                  </li>
+                ))}
               </ul>
             </div>
             <div>
               <p className="mb-2 text-sm font-medium">Executantes</p>
               <ul className="space-y-1 text-sm">
-                {data.servicos.length > 0 ? (
-                  data.servicos.map((item, idx) => (
-                    <li key={idx} className="border-b py-1 last:border-0">
-                      {item.executante || '—'}
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-gray-400">—</li>
-                )}
+                {data.servicos.map((item, idx) => (
+                  <li key={idx} className="border-b py-1 last:border-0">
+                    {item.executante || '—'}
+                  </li>
+                ))}
               </ul>
             </div>
             <div>
               <p className="mb-2 text-sm font-medium">Qualificação</p>
               <ul className="space-y-1 text-sm">
-                {data.servicos.length > 0 ? (
-                  data.servicos.map((item, idx) => (
-                    <li key={idx} className="border-b py-1 last:border-0">
-                      {item.qualificacao || '—'}
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-gray-400">—</li>
-                )}
+                {data.servicos.map((item, idx) => (
+                  <li key={idx} className="border-b py-1 last:border-0">
+                    {item.qualificacao || '—'}
+                  </li>
+                ))}
               </ul>
             </div>
           </div>

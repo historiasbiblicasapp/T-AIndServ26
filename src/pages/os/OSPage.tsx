@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react'
+import { Plus, Search, Eye, Edit, Trash2, ChevronDown, ChevronUp, FileText, Users, ListChecks, Package, Paperclip, PenLine, ClipboardList, History } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -27,7 +27,29 @@ import {
   deleteWorkOrder,
   getClients,
   getEquipments,
+  getEmployees,
   searchCep,
+  getWorkOrderExecutantes,
+  createWorkOrderExecutante,
+  deleteWorkOrderExecutante,
+  getEscopoItems,
+  createEscopoItem,
+  deleteEscopoItem,
+  getRecursos,
+  createRecurso,
+  deleteRecurso,
+  getAnexos,
+  createAnexo,
+  deleteAnexo,
+  getAssinaturas,
+  createAssinatura,
+  getChecklistItens,
+  createChecklistItem,
+  updateChecklistItem,
+  deleteChecklistItem,
+  getHistoricoOS,
+  getExecucoes,
+  createExecucao,
 } from '@/services/storage'
 import type { Client } from '@/types/clients'
 
@@ -64,6 +86,7 @@ export default function WorkOrdersPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [clients, setClients] = useState<Client[]>([])
   const [equipments, setEquipments] = useState<{ id: string; name: string; code: string }[]>([])
+  const [employees, setEmployees] = useState<{ id: string; full_name: string }[]>([])
   const [loadingCep, setLoadingCep] = useState(false)
   const [form, setForm] = useState<OS>({
     id: '',
@@ -86,6 +109,26 @@ export default function WorkOrdersPage() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
+
+  const [executantes, setExecutantes] = useState<any[]>([])
+  const [escopo, setEscopo] = useState<any[]>([])
+  const [recursos, setRecursos] = useState<any[]>([])
+  const [anexos, setAnexos] = useState<any[]>([])
+  const [assinaturas, setAssinaturas] = useState<any[]>([])
+  const [checklist, setChecklist] = useState<any[]>([])
+  const [historico, setHistorico] = useState<any[]>([])
+  const [execucoes, setExecucoes] = useState<any[]>([])
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    executantes: false,
+    escopo: false,
+    recursos: false,
+    anexos: false,
+    assinaturas: false,
+    checklist: false,
+    historico: false,
+    execucoes: false,
+  })
 
   const loadOS = async () => {
     try {
@@ -144,13 +187,41 @@ export default function WorkOrdersPage() {
   const loadEquipments = async () => {
     try {
       const data = await getEquipments()
-      setEquipments(
-        data.map((eq: any) => ({
-          id: eq.id,
-          name: eq.name,
-          code: eq.code,
-        }))
-      )
+      setEquipments(data.map((eq: any) => ({ id: eq.id, name: eq.name, code: eq.code })))
+    } catch {
+      // ignore
+    }
+  }
+
+  const loadEmployees = async () => {
+    try {
+      const data = await getEmployees()
+      setEmployees(data.map((e: any) => ({ id: e.id, full_name: e.full_name })))
+    } catch {
+      // ignore
+    }
+  }
+
+  const loadRelatedData = async (osId: string) => {
+    try {
+      const [executantesData, escopoData, recursosData, anexosData, assinaturasData, checklistData, historicoData, execucoesData] = await Promise.all([
+        getWorkOrderExecutantes(osId),
+        getEscopoItems(osId),
+        getRecursos(osId),
+        getAnexos(osId),
+        getAssinaturas(osId),
+        getChecklistItens(undefined, osId),
+        getHistoricoOS(osId),
+        getExecucoes(osId),
+      ])
+      setExecutantes(executantesData)
+      setEscopo(escopoData)
+      setRecursos(recursosData)
+      setAnexos(anexosData)
+      setAssinaturas(assinaturasData)
+      setChecklist(checklistData)
+      setHistorico(historicoData)
+      setExecucoes(execucoesData)
     } catch {
       // ignore
     }
@@ -160,7 +231,14 @@ export default function WorkOrdersPage() {
     loadOS()
     loadClients()
     loadEquipments()
+    loadEmployees()
   }, [])
+
+  useEffect(() => {
+    if (editingId) {
+      loadRelatedData(editingId)
+    }
+  }, [editingId])
 
   const filtered = osList.filter((item) => {
     if (search && !item.numero.toLowerCase().includes(search.toLowerCase()) && !item.titulo.toLowerCase().includes(search.toLowerCase())) return false
@@ -190,6 +268,14 @@ export default function WorkOrdersPage() {
       telefone: '',
     })
     setEditingId(null)
+    setExecutantes([])
+    setEscopo([])
+    setRecursos([])
+    setAnexos([])
+    setAssinaturas([])
+    setChecklist([])
+    setHistorico([])
+    setExecucoes([])
   }
 
   const openCreate = () => {
@@ -305,6 +391,10 @@ export default function WorkOrdersPage() {
     }
   }
 
+  const toggleSection = (section: string) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -414,12 +504,7 @@ export default function WorkOrdersPage() {
               </div>
               <div className="space-y-2">
                 <Label>CEP</Label>
-                <Input
-                  value={form.cep}
-                  onChange={(e) => handleCepChange(e.target.value)}
-                  placeholder="CEP"
-                  disabled={loadingCep}
-                />
+                <Input value={form.cep} onChange={(e) => handleCepChange(e.target.value)} placeholder="CEP" disabled={loadingCep} />
                 {loadingCep && <p className="text-xs text-gray-500">Buscando CEP...</p>}
               </div>
               <div className="space-y-2">
@@ -444,6 +529,386 @@ export default function WorkOrdersPage() {
                   <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="Telefone" />
                 </div>
               </div>
+
+              {editingId && (
+                <div className="mt-4 space-y-2">
+                  <Label>Itens da OS</Label>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('executantes')}>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span className="text-sm font-medium">Executantes</span>
+                      </div>
+                      {openSections.executantes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.executantes && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex gap-2">
+                          <Select onValueChange={async (employeeId) => {
+                            if (editingId && employeeId) {
+                              await createWorkOrderExecutante({
+                                work_order_id: editingId,
+                                employee_id: employeeId,
+                                type: '',
+                                qualification: '',
+                              })
+                              await loadRelatedData(editingId)
+                              toast.success('Executante adicionado')
+                            }
+                          }}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecione um colaborador" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {employees.map((emp) => (
+                                <SelectItem key={emp.id} value={emp.id}>
+                                  {emp.full_name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          {executantes.map((exec: any) => (
+                            <div key={exec.id} className="flex items-center justify-between p-2 border rounded">
+                              <div>
+                                <p className="text-sm font-medium">{exec.employee?.full_name || 'Sem nome'}</p>
+                                <p className="text-xs text-gray-500">{exec.qualification || 'Sem qualificação'}</p>
+                              </div>
+                              <Button variant="ghost" size="icon" onClick={async () => {
+                                if (editingId) {
+                                  await deleteWorkOrderExecutante(exec.id, editingId)
+                                  await loadRelatedData(editingId)
+                                }
+                              }}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('escopo')}>
+                      <div className="flex items-center gap-2">
+                        <ListChecks className="h-4 w-4" />
+                        <span className="text-sm font-medium">Escopo</span>
+                      </div>
+                      {openSections.escopo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.escopo && (
+                      <div className="mt-2 space-y-2">
+                        <div className="grid grid-cols-4 gap-2">
+                          <Input placeholder="Item" id="escopo-item" />
+                          <Input placeholder="Pessoas" id="escopo-people" type="number" />
+                          <Input placeholder="Horas" id="escopo-hours" />
+                          <Button onClick={async () => {
+                            const service = (document.getElementById('escopo-item') as HTMLInputElement)?.value
+                            const people = Number((document.getElementById('escopo-people') as HTMLInputElement)?.value || 0)
+                            const hours = (document.getElementById('escopo-hours') as HTMLInputElement)?.value
+                            if (!service || !editingId) return
+                            await createEscopoItem({
+                              work_order_id: editingId,
+                              item_number: escopo.length + 1,
+                              service,
+                              people,
+                              hours,
+                            })
+                            await loadRelatedData(editingId)
+                          }}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          {escopo.map((item: any) => (
+                            <div key={item.id} className="flex items-center justify-between p-2 border rounded">
+                              <div>
+                                <p className="text-sm font-medium">{item.service}</p>
+                                <p className="text-xs text-gray-500">{item.people} pessoas • {item.hours}</p>
+                              </div>
+                              <Button variant="ghost" size="icon" onClick={async () => {
+                                if (editingId) {
+                                  await deleteEscopoItem(item.id, editingId)
+                                  await loadRelatedData(editingId)
+                                }
+                              }}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        <span className="text-sm font-medium">Recursos</span>
+                      </div>
+                      {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.recursos && (
+                      <div className="mt-2 space-y-2">
+                        <div className="grid grid-cols-5 gap-2">
+                          <Input placeholder="Nome" id="recurso-nome" />
+                          <Input placeholder="UNI." id="recurso-unidade" />
+                          <Input placeholder="Qtd" id="recurso-qtd" type="number" />
+                          <Input placeholder="Valor" id="recurso-valor" type="number" />
+                          <Button onClick={async () => {
+                            const name = (document.getElementById('recurso-nome') as HTMLInputElement)?.value
+                            const unit = (document.getElementById('recurso-unidade') as HTMLInputElement)?.value
+                            const quantity = Number((document.getElementById('recurso-qtd') as HTMLInputElement)?.value || 0)
+                            const unit_value = Number((document.getElementById('recurso-valor') as HTMLInputElement)?.value || 0)
+                            const total = quantity * unit_value
+                            if (!name || !editingId) return
+                            await createRecurso({
+                              work_order_id: editingId,
+                              name,
+                              unit,
+                              quantity,
+                              unit_value,
+                              total,
+                            })
+                            await loadRelatedData(editingId)
+                          }}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          {recursos.map((item: any) => (
+                            <div key={item.id} className="flex items-center justify-between p-2 border rounded">
+                              <div>
+                                <p className="text-sm font-medium">{item.name}</p>
+                                <p className="text-xs text-gray-500">{item.quantity} {item.unit} • R$ {Number(item.unit_value).toFixed(2)} • Total: R$ {Number(item.total).toFixed(2)}</p>
+                              </div>
+                              <Button variant="ghost" size="icon" onClick={async () => {
+                                if (editingId) {
+                                  await deleteRecurso(item.id, editingId)
+                                  await loadRelatedData(editingId)
+                                }
+                              }}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('anexos')}>
+                      <div className="flex items-center gap-2">
+                        <Paperclip className="h-4 w-4" />
+                        <span className="text-sm font-medium">Anexos</span>
+                      </div>
+                      {openSections.anexos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.anexos && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex gap-2">
+                          <Input placeholder="URL do arquivo" id="anexo-url" />
+                          <Button onClick={async () => {
+                            const file_path = (document.getElementById('anexo-url') as HTMLInputElement)?.value
+                            if (!file_path || !editingId) return
+                            await createAnexo({
+                              work_order_id: editingId,
+                              file_name: file_path.split('/').pop() || file_path,
+                              file_path,
+                              file_size: 0,
+                              mime_type: 'application/octet-stream',
+                            })
+                            await loadRelatedData(editingId)
+                          }}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          {anexos.map((item: any) => (
+                            <div key={item.id} className="flex items-center justify-between p-2 border rounded">
+                              <a href={item.file_path} target="_blank" rel="noreferrer" className="text-sm text-brand underline">
+                                {item.file_name}
+                              </a>
+                              <Button variant="ghost" size="icon" onClick={async () => {
+                                if (editingId) {
+                                  await deleteAnexo(item.id, editingId)
+                                  await loadRelatedData(editingId)
+                                }
+                              }}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('assinaturas')}>
+                      <div className="flex items-center gap-2">
+                        <PenLine className="h-4 w-4" />
+                        <span className="text-sm font-medium">Assinaturas</span>
+                      </div>
+                      {openSections.assinaturas ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.assinaturas && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex gap-2">
+                          <Select data-testid="assinatura-tipo">
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="executante">Executante</SelectItem>
+                              <SelectItem value="cliente">Cliente</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input placeholder="Nome" data-testid="assinatura-nome" />
+                          <Input placeholder="CPF" data-testid="assinatura-cpf" />
+                          <Button onClick={async () => {
+                            const tipo = (document.querySelector('[data-testid="assinatura-tipo"]') as HTMLSelectElement)?.value
+                            const nome = (document.querySelector('[data-testid="assinatura-nome"]') as HTMLInputElement)?.value
+                            const cpf = (document.querySelector('[data-testid="assinatura-cpf"]') as HTMLInputElement)?.value
+                            if (!nome || !editingId) return
+                            await createAssinatura({
+                              work_order_id: editingId,
+                              signer_id: null,
+                              tipo,
+                              nome,
+                              cpf,
+                              data: new Date().toISOString(),
+                            })
+                            await loadRelatedData(editingId)
+                          }}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          {assinaturas.map((item: any) => (
+                            <div key={item.id} className="flex items-center justify-between p-2 border rounded">
+                              <div>
+                                <p className="text-sm font-medium">{item.nome} {item.cpf ? `(${item.cpf})` : ''}</p>
+                                <p className="text-xs text-gray-500">{item.tipo}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('checklist')}>
+                      <div className="flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4" />
+                        <span className="text-sm font-medium">Checklist</span>
+                      </div>
+                      {openSections.checklist ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.checklist && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex gap-2">
+                          <Input placeholder="Novo item" id="checklist-text" className="flex-1" />
+                          <Button onClick={async () => {
+                            const title = (document.getElementById('checklist-text') as HTMLInputElement)?.value
+                            if (!title || !editingId) return
+                            await createChecklistItem({
+                              work_order_id: editingId,
+                              title,
+                              checked: false,
+                            })
+                            await loadRelatedData(editingId)
+                          }}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          {checklist.map((item: any) => (
+                            <div key={item.id} className="flex items-center justify-between p-2 border rounded">
+                              <div className="flex items-center gap-2">
+                                <input type="checkbox" checked={item.checked} onChange={async () => {
+                                  if (editingId) {
+                                    await updateChecklistItem(item.id, { checked: !item.checked }, editingId)
+                                    await loadRelatedData(editingId)
+                                  }
+                                }} />
+                                <span className={`text-sm ${item.checked ? 'line-through text-gray-500' : ''}`}>{item.title}</span>
+                              </div>
+                              <Button variant="ghost" size="icon" onClick={async () => {
+                                if (editingId) {
+                                  await deleteChecklistItem(item.id, editingId)
+                                  await loadRelatedData(editingId)
+                                }
+                              }}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('historico')}>
+                      <div className="flex items-center gap-2">
+                        <History className="h-4 w-4" />
+                        <span className="text-sm font-medium">Histórico</span>
+                      </div>
+                      {openSections.historico ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.historico && (
+                      <div className="mt-2 space-y-1">
+                        {historico.map((item: any) => (
+                          <div key={item.id} className="text-sm border-b py-1 last:border-0">
+                            <span className="font-medium">{item.action}</span> — {item.description}
+                            <div className="text-xs text-gray-500">{new Date(item.created_at).toLocaleString('pt-BR')}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('execucoes')}>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-sm font-medium">Execuções</span>
+                      </div>
+                      {openSections.execucoes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.execucoes && (
+                      <div className="mt-2 space-y-2">
+                        <Button onClick={async () => {
+                          if (!editingId) return
+                          await createExecucao({
+                            work_order_id: editingId,
+                            user_id: null,
+                          })
+                          await loadRelatedData(editingId)
+                          toast.success('Execução registrada')
+                        }}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Registrar Execução
+                        </Button>
+                        <div className="space-y-1">
+                          {execucoes.map((item: any) => (
+                            <div key={item.id} className="text-sm border-b py-1 last:border-0">
+                              {new Date(item.executed_at).toLocaleString('pt-BR')}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setOpenDialog(false)}>
