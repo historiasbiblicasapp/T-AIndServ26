@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { getEquipments, createEquipment, deleteEquipment } from '@/services/storage'
-import { Plus, Search, Trash2 } from 'lucide-react'
+import { getEquipments, createEquipment, updateEquipment, deleteEquipment } from '@/services/storage'
+import { Plus, Search, Trash2, Edit } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
 
 interface Equipment {
@@ -20,6 +20,7 @@ export default function EquipmentListPage() {
   const [equipments, setEquipments] = useState<Equipment[]>([])
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', code: '', sector: '', status: 'operational' })
 
   useEffect(() => {
@@ -35,17 +36,29 @@ export default function EquipmentListPage() {
     }
   }
 
-  const handleAddEquipment = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await createEquipment(formData)
+      if (editingId) {
+        await updateEquipment(editingId, formData)
+        toast.success('Equipamento atualizado')
+      } else {
+        await createEquipment(formData)
+        toast.success('Equipamento cadastrado')
+      }
       await loadEquipments()
       setFormData({ name: '', code: '', sector: '', status: 'operational' })
+      setEditingId(null)
       setShowForm(false)
-      toast.success('Equipamento cadastrado')
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao cadastrar equipamento')
+      toast.error(err.message || 'Erro ao salvar equipamento')
     }
+  }
+
+  const handleEdit = (eq: Equipment) => {
+    setFormData({ name: eq.name, code: eq.code, sector: eq.sector, status: eq.status })
+    setEditingId(eq.id)
+    setShowForm(true)
   }
 
   const handleDelete = async (id: string) => {
@@ -77,10 +90,10 @@ export default function EquipmentListPage() {
         {showForm && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Cadastrar Equipamento</CardTitle>
+              <CardTitle>{editingId ? 'Editar Equipamento' : 'Cadastrar Equipamento'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleAddEquipment} className="grid gap-4 md:grid-cols-4">
+              <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-4">
                 <div>
                   <Label>Nome</Label>
                   <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
@@ -108,8 +121,8 @@ export default function EquipmentListPage() {
                   </select>
                 </div>
                 <div className="md:col-span-4 flex justify-end gap-2">
-                  <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Cancelar</Button>
-                  <Button type="submit">Salvar</Button>
+                  <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null) }}>Cancelar</Button>
+                  <Button type="submit">{editingId ? 'Salvar' : 'Cadastrar'}</Button>
                 </div>
               </form>
             </CardContent>
@@ -121,7 +134,7 @@ export default function EquipmentListPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Equipamentos</CardTitle>
               <div className="flex gap-2">
-                <Button onClick={() => setShowForm(!showForm)}>
+                <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ name: '', code: '', sector: '', status: 'operational' }) }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Equipamento
                 </Button>
@@ -157,7 +170,7 @@ export default function EquipmentListPage() {
                       <td className="p-2">{eq.sector}</td>
                       <td className="p-2">
                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                          eq.status === 'operational' ? 'bg-green-100 text-green-800' :
+                          eq.status === 'operational' ? 'bg-brand/10 text-brand' :
                           eq.status === 'attention' ? 'bg-yellow-100 text-yellow-800' :
                           eq.status === 'critical' ? 'bg-orange-100 text-orange-800' :
                           eq.status === 'failure' ? 'bg-red-100 text-red-800' :
@@ -170,9 +183,14 @@ export default function EquipmentListPage() {
                         </span>
                       </td>
                       <td className="p-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(eq.id)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(eq)} title="Editar">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(eq.id)} title="Excluir">
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

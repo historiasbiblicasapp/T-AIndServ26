@@ -9,19 +9,19 @@ export default function DashboardPage() {
   const navigate = useNavigate()
 
   const kpis = [
-    { label: 'Ordens Abertas', value: '0', icon: ClipboardList, color: 'bg-blue-100 text-blue-600', link: '/work-orders' },
-    { label: 'Equipamentos', value: '0', icon: Wrench, color: 'bg-green-100 text-green-600', link: '/equipment' },
-    { label: 'Colaboradores', value: '0', icon: Users, color: 'bg-purple-100 text-purple-600', link: '/employees' },
-    { label: 'Manutenções', value: '0', icon: Calendar, color: 'bg-orange-100 text-orange-600', link: '/maintenance' },
+    { label: 'Ordens Abertas', value: '0', icon: ClipboardList, color: 'bg-brand/10 text-brand', link: '/work-orders' },
+    { label: 'Equipamentos', value: '0', icon: Wrench, color: 'bg-blue-50 text-brand', link: '/equipment' },
+    { label: 'Colaboradores', value: '0', icon: Users, color: 'bg-indigo-50 text-indigo-600', link: '/employees' },
+    { label: 'Manutenções', value: '0', icon: Calendar, color: 'bg-orange-50 text-orange-600', link: '/maintenance' },
   ]
 
   const indicators = [
-    { label: 'Disponibilidade', value: '0%', icon: TrendingUp, color: 'bg-emerald-100 text-emerald-700' },
-    { label: 'MTBF', value: '0h', icon: Clock, color: 'bg-blue-100 text-blue-700' },
-    { label: 'MTTR', value: '0h', icon: AlertTriangle, color: 'bg-yellow-100 text-yellow-700' },
-    { label: 'Backlog', value: '0', icon: ClipboardList, color: 'bg-red-100 text-red-700' },
-    { label: 'Preventivas Atrasadas', value: '0', icon: AlertTriangle, color: 'bg-red-100 text-red-700' },
-    { label: 'OEE', value: '0%', icon: TrendingUp, color: 'bg-emerald-100 text-emerald-700' },
+    { label: 'Disponibilidade', value: '0%', icon: TrendingUp, color: 'bg-blue-50 text-blue-700' },
+    { label: 'MTBF', value: '0h', icon: Clock, color: 'bg-brand/10 text-brand' },
+    { label: 'MTTR', value: '0h', icon: AlertTriangle, color: 'bg-yellow-50 text-yellow-700' },
+    { label: 'Backlog', value: '0', icon: ClipboardList, color: 'bg-red-50 text-red-700' },
+    { label: 'Preventivas Atrasadas', value: '0', icon: AlertTriangle, color: 'bg-red-50 text-red-700' },
+    { label: 'OEE', value: '0%', icon: TrendingUp, color: 'bg-blue-50 text-blue-700' },
   ]
 
   const quickActions = [
@@ -31,10 +31,10 @@ export default function DashboardPage() {
   ]
 
   const preventionAlerts = [
-    { label: 'Programadas', value: 0, color: 'bg-green-100 text-green-800' },
-    { label: 'Próximas', value: 0, color: 'bg-yellow-100 text-yellow-800' },
-    { label: 'Vencendo', value: 0, color: 'bg-orange-100 text-orange-800' },
-    { label: 'Vencidas', value: 0, color: 'bg-red-100 text-red-800' },
+    { label: 'Programadas', value: 0, color: 'text-brand' },
+    { label: 'Próximas', value: 0, color: 'text-yellow-700' },
+    { label: 'Vencendo', value: 0, color: 'text-orange-700' },
+    { label: 'Vencidas', value: 0, color: 'text-red-700' },
   ]
 
   return (

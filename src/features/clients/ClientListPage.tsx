@@ -11,24 +11,64 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import {
-  getClients,
-  createClient,
-  updateClient,
-  deleteClient,
-  getBrazilianCities,
-} from '@/services/storage'
-import { Plus, Search, Trash2 } from 'lucide-react'
+import { getClients, createClient, updateClient, deleteClient, searchCep, getBrazilianCities } from '@/services/storage'
+import { Plus, Search, Trash2, Edit, Loader2 } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
-import type { Client } from '@/types/clients'
+
+interface Client {
+  id: string
+  name: string
+  cnpj: string
+  company: string
+  address: string
+  city: string
+  state: string
+  zip_code: string
+  number: string
+  complement: string
+  neighborhood: string
+  phone: string
+  email: string
+  responsible: string
+}
+
+const BRAZILIAN_STATES = [
+  { value: 'AC', label: 'Acre' },
+  { value: 'AL', label: 'Alagoas' },
+  { value: 'AP', label: 'Amapá' },
+  { value: 'AM', label: 'Amazonas' },
+  { value: 'BA', label: 'Bahia' },
+  { value: 'CE', label: 'Ceará' },
+  { value: 'DF', label: 'Distrito Federal' },
+  { value: 'ES', label: 'Espírito Santo' },
+  { value: 'GO', label: 'Goiás' },
+  { value: 'MA', label: 'Maranhão' },
+  { value: 'MT', label: 'Mato Grosso' },
+  { value: 'MS', label: 'Mato Grosso do Sul' },
+  { value: 'MG', label: 'Minas Gerais' },
+  { value: 'PA', label: 'Pará' },
+  { value: 'PB', label: 'Paraíba' },
+  { value: 'PR', label: 'Paraná' },
+  { value: 'PE', label: 'Pernambuco' },
+  { value: 'PI', label: 'Piauí' },
+  { value: 'RJ', label: 'Rio de Janeiro' },
+  { value: 'RN', label: 'Rio Grande do Norte' },
+  { value: 'RS', label: 'Rio Grande do Sul' },
+  { value: 'RO', label: 'Rondônia' },
+  { value: 'RR', label: 'Roraima' },
+  { value: 'SC', label: 'Santa Catarina' },
+  { value: 'SP', label: 'São Paulo' },
+  { value: 'SE', label: 'Sergipe' },
+  { value: 'TO', label: 'Tocantins' },
+]
 
 export default function ClientListPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [states, setStates] = useState<string[]>([])
-  const [cities, setCities] = useState<{ id: string; city_name: string }[]>([])
+  const [loadingCep, setLoadingCep] = useState(false)
+  const [cities, setCities] = useState<{ city_name: string; state: string }[]>([])
   const [formData, setFormData] = useState({
     name: '',
     cnpj: '',
@@ -47,14 +87,21 @@ export default function ClientListPage() {
 
   useEffect(() => {
     loadClients()
-    loadStates()
+    loadCities()
   }, [])
 
-  useEffect(() => {
-    if (formData.state) {
-      loadCities(formData.state)
+  const loadCities = async () => {
+    try {
+      const data = await getBrazilianCities()
+      setCities(data as any[])
+    } catch {
+      // ignore
     }
-  }, [formData.state])
+  }
+
+  const filteredCityNames = cities
+    .filter((c) => c.state === formData.state)
+    .map((c) => c.city_name)
 
   const loadClients = async () => {
     try {
@@ -63,44 +110,6 @@ export default function ClientListPage() {
     } catch (err: any) {
       toast.error(err.message || 'Erro ao carregar clientes')
     }
-  }
-
-  const loadStates = async () => {
-    try {
-      const data = await getBrazilianCities()
-      const uniqueStates = Array.from(new Set(data.map((c: any) => c.state))).sort()
-      setStates(uniqueStates)
-    } catch {
-      // ignore
-    }
-  }
-
-  const loadCities = async (state: string) => {
-    try {
-      const data = await getBrazilianCities(state)
-      setCities(data.map((c: any) => ({ id: c.id, city_name: c.city_name })))
-    } catch {
-      setCities([])
-    }
-  }
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      cnpj: '',
-      company: '',
-      address: '',
-      city: '',
-      state: '',
-      zip_code: '',
-      number: '',
-      complement: '',
-      neighborhood: '',
-      phone: '',
-      email: '',
-      responsible: '',
-    })
-    setEditingId(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,7 +123,22 @@ export default function ClientListPage() {
         toast.success('Cliente cadastrado')
       }
       await loadClients()
-      resetForm()
+      setFormData({
+        name: '',
+        cnpj: '',
+        company: '',
+        address: '',
+        city: '',
+        state: '',
+        zip_code: '',
+        number: '',
+        complement: '',
+        neighborhood: '',
+        phone: '',
+        email: '',
+        responsible: '',
+      })
+      setEditingId(null)
       setShowForm(false)
     } catch (err: any) {
       toast.error(err.message || 'Erro ao salvar cliente')
@@ -152,10 +176,31 @@ export default function ClientListPage() {
     }
   }
 
-  const filteredClients = clients.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.cnpj && c.cnpj.includes(search)) ||
-    (c.company && c.company.toLowerCase().includes(search.toLowerCase()))
+  const handleCepBlur = async () => {
+    const cep = formData.zip_code.replace(/\D/g, '')
+    if (cep.length !== 8) return
+    setLoadingCep(true)
+    try {
+      const data = await searchCep(cep)
+      if (data) {
+        setFormData(prev => ({
+          ...prev,
+          address: data.address,
+          neighborhood: data.neighborhood,
+          city: data.city,
+          state: data.state,
+          zip_code: data.zip_code,
+        }))
+      }
+    } finally {
+      setLoadingCep(false)
+    }
+  }
+
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(search.toLowerCase()) ||
+    client.cnpj.toLowerCase().includes(search.toLowerCase()) ||
+    client.company.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -164,10 +209,11 @@ export default function ClientListPage() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Clientes</h2>
-            <p className="text-muted-foreground">Gerencie os clientes</p>
+            <p className="text-muted-foreground">Gerencie os clientes da planta</p>
           </div>
           <DashboardButton />
         </div>
+
         {showForm && (
           <Card className="mb-8">
             <CardHeader>
@@ -176,123 +222,85 @@ export default function ClientListPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label>Nome</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
+                  <Label>Nome do Cliente</Label>
+                  <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                 </div>
                 <div>
                   <Label>CNPJ</Label>
-                  <Input
-                    value={formData.cnpj}
-                    onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                  />
+                  <Input value={formData.cnpj} onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })} placeholder="00.000.000/0000-00" />
                 </div>
                 <div>
                   <Label>Empresa</Label>
-                  <Input
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  />
+                  <Input value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Responsável</Label>
+                  <Input value={formData.responsible} onChange={(e) => setFormData({ ...formData, responsible: e.target.value })} />
                 </div>
                 <div>
                   <Label>CEP</Label>
-                  <Input
-                    value={formData.zip_code}
-                    onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Endereço</Label>
-                  <Input
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Número</Label>
-                  <Input
-                    value={formData.number}
-                    onChange={(e) => setFormData({ ...formData, number: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Complemento</Label>
-                  <Input
-                    value={formData.complement}
-                    onChange={(e) => setFormData({ ...formData, complement: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Bairro</Label>
-                  <Input
-                    value={formData.neighborhood}
-                    onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Cidade</Label>
-                  <Select
-                    value={formData.city}
-                    onValueChange={(value) => setFormData({ ...formData, city: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.map((c) => (
-                        <SelectItem key={c.id} value={c.city_name}>
-                          {c.city_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Input
+                      value={formData.zip_code}
+                      onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
+                      onBlur={handleCepBlur}
+                      placeholder="00000-000"
+                    />
+                    {loadingCep && <Loader2 className="absolute right-2 top-2 h-4 w-4 animate-spin text-muted-foreground" />}
+                  </div>
                 </div>
                 <div>
                   <Label>Estado</Label>
-                  <Select
-                    value={formData.state}
-                    onValueChange={(value) => setFormData({ ...formData, state: value, city: '' })}
-                  >
+                  <Select value={formData.state} onValueChange={(value) => setFormData({ ...formData, state: value, city: '' })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
+                      <SelectValue placeholder="Selecione um estado" />
                     </SelectTrigger>
                     <SelectContent>
-                      {states.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
+                      {BRAZILIAN_STATES.map(state => (
+                        <SelectItem key={state.value} value={state.value}>{state.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
+                  <Label>Cidade</Label>
+                  <Select value={formData.city} onValueChange={(value) => setFormData({ ...formData, city: value })} disabled={!formData.state}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma cidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredCityNames.map(city => (
+                        <SelectItem key={city} value={city}>{city}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Endereço</Label>
+                  <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Número</Label>
+                  <Input value={formData.number} onChange={(e) => setFormData({ ...formData, number: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Complemento</Label>
+                  <Input value={formData.complement} onChange={(e) => setFormData({ ...formData, complement: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Bairro</Label>
+                  <Input value={formData.neighborhood} onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })} />
+                </div>
+                <div>
                   <Label>Telefone</Label>
-                  <Input
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
+                  <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                 </div>
                 <div>
                   <Label>Email</Label>
-                  <Input
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Responsável</Label>
-                  <Input
-                    value={formData.responsible}
-                    onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
-                  />
+                  <Input value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                 </div>
                 <div className="md:col-span-2 flex justify-end gap-2">
-                  <Button type="button" variant="secondary" onClick={() => { resetForm(); setShowForm(false) }}>
-                    Cancelar
-                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null) }}>Cancelar</Button>
                   <Button type="submit">{editingId ? 'Salvar' : 'Cadastrar'}</Button>
                 </div>
               </form>
@@ -302,10 +310,10 @@ export default function ClientListPage() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Clientes</CardTitle>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>Lista de Clientes</CardTitle>
               <div className="flex gap-2">
-                <Button onClick={() => { resetForm(); setShowForm(!showForm) }}>
+                <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ name: '', cnpj: '', company: '', address: '', city: '', state: '', zip_code: '', number: '', complement: '', neighborhood: '', phone: '', email: '', responsible: '' }) }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Cliente
                 </Button>
@@ -328,7 +336,6 @@ export default function ClientListPage() {
                   <tr className="border-b">
                     <th className="p-2 text-left">Nome</th>
                     <th className="p-2 text-left">CNPJ</th>
-                    <th className="p-2 text-left">Empresa</th>
                     <th className="p-2 text-left">Cidade/UF</th>
                     <th className="p-2 text-left">Telefone</th>
                     <th className="p-2 text-left">Ações</th>
@@ -338,18 +345,15 @@ export default function ClientListPage() {
                   {filteredClients.map((client) => (
                     <tr key={client.id} className="border-b">
                       <td className="p-2">{client.name}</td>
-                      <td className="p-2">{client.cnpj || '—'}</td>
-                      <td className="p-2">{client.company || '—'}</td>
+                      <td className="p-2">{client.cnpj || '-'}</td>
+                      <td className="p-2">{client.city}/{client.state}</td>
+                      <td className="p-2">{client.phone || '-'}</td>
                       <td className="p-2">
-                        {client.city && client.state ? `${client.city} / ${client.state}` : '—'}
-                      </td>
-                      <td className="p-2">{client.phone || '—'}</td>
-                      <td className="p-2">
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(client)}>
-                            <Search className="h-4 w-4" />
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(client)} title="Editar">
+                            <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(client.id)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(client.id)} title="Excluir">
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
@@ -358,7 +362,7 @@ export default function ClientListPage() {
                   ))}
                   {filteredClients.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                      <td colSpan={5} className="p-4 text-center text-muted-foreground">
                         Nenhum cliente encontrado
                       </td>
                     </tr>

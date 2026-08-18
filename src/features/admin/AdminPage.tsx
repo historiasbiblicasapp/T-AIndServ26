@@ -52,9 +52,9 @@ const ROLES: Role[] = [
 ]
 
 const PROFILE_COLORS: Record<string, string> = {
-  admin: 'bg-purple-100 text-purple-800',
-  supervisor: 'bg-blue-100 text-blue-800',
-  tecnico: 'bg-green-100 text-green-800',
+  admin: 'bg-brand/10 text-brand',
+  supervisor: 'bg-blue-50 text-brand',
+  tecnico: 'bg-indigo-50 text-indigo-600',
   visualizador: 'bg-gray-100 text-gray-800',
 }
 

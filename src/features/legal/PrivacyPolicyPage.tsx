@@ -1,11 +1,11 @@
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-green-800 bg-green-700">
+      <header className="border-b border-gray-200 bg-white">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-green-700 font-bold text-sm">T&A</div>
-            <h1 className="text-xl font-bold text-white">Política de Privacidade</h1>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">T&A</div>
+            <h1 className="text-xl font-bold text-gray-900">Política de Privacidade</h1>
           </div>
         </div>
       </header>

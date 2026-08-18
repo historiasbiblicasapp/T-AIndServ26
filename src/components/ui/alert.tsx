@@ -10,7 +10,7 @@ const alertVariants = cva(
       variant: {
         default: "border-gray-200 bg-gray-50 text-gray-900",
         destructive: "border-red-200 bg-red-50 text-red-900",
-        success: "border-green-200 bg-green-50 text-green-900",
+        success: "border-brand/20 bg-brand/5 text-brand",
         warning: "border-yellow-200 bg-yellow-50 text-yellow-900",
       },
     },

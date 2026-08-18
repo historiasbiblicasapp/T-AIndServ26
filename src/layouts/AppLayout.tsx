@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   LogOut,
   Menu,
   X,
-  Sun,
-  Moon,
-  ChevronDown,
   Home,
+  ChevronDown,
 } from 'lucide-react'
 import { menuItems, bottomItems } from '@/config/routes'
 
@@ -18,7 +15,6 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -37,17 +33,17 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-green-600">
+    <div className="min-h-screen bg-white">
       {sidebarOpen && isMobile && (
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {!isMobile && (
-        <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-green-700 border-r border-green-800">
-          <div className="flex h-16 items-center justify-between px-4 border-b border-green-800">
+        <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
+          <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-green-700 font-bold text-sm">T&A</div>
-              <span className="text-lg font-bold text-white">T&A Serv Ind</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">T&amp;A</div>
+              <span className="text-lg font-bold text-gray-900">T&A Industrial Service</span>
             </div>
           </div>
 
@@ -60,8 +56,8 @@ export default function AppLayout() {
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-white/20 text-white'
-                      : 'text-green-100 hover:bg-white/10 hover:text-white'
+                      ? 'bg-brand/10 text-brand'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`
                 }
               >
@@ -71,55 +67,52 @@ export default function AppLayout() {
             ))}
           </nav>
 
-          <div className="border-t border-green-800 p-4">
-            <Button variant="ghost" className="w-full justify-start gap-2 text-white hover:text-white hover:bg-white/10" onClick={handleLogout}>
+          <div className="border-t border-gray-200 p-4">
+            <Button variant="ghost" className="w-full justify-start gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
               Sair
             </Button>
-            <div className="mt-2 flex flex-col gap-1 text-xs text-green-200">
-              <a href="/privacy" className="hover:text-white">Política de Privacidade</a>
-              <a href="/terms" className="hover:text-white">Termos de Uso</a>
+            <div className="mt-2 flex flex-col gap-1 text-xs text-gray-500">
+              <a href="/privacy" className="hover:text-gray-900">Política de Privacidade</a>
+              <a href="/terms" className="hover:text-gray-900">Termos de Uso</a>
             </div>
           </div>
         </aside>
       )}
 
       <div className={!isMobile ? 'lg:pl-64 min-h-screen flex flex-col' : 'min-h-screen flex flex-col'}>
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-green-700 border-b border-green-800 px-4 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4 lg:px-6">
           <div className="flex items-center gap-4">
             {isMobile && (
               <button className="lg:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                {sidebarOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
+                {sidebarOpen ? <X className="h-6 w-6 text-gray-900" /> : <Menu className="h-6 w-6 text-gray-900" />}
               </button>
             )}
             <div
               className="flex cursor-pointer items-center gap-2"
               onClick={() => navigate('/')}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-green-700 font-bold text-sm">T&amp;A</div>
-              <h1 className="text-lg font-semibold text-white">Serv Ind</h1>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">T&amp;A</div>
+              <h1 className="text-lg font-semibold text-gray-900">Industrial Service</h1>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-white/10" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="icon" className="text-gray-700 hover:text-gray-900 hover:bg-gray-100" onClick={() => navigate('/')}>
               <Home className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-white/10" onClick={toggleTheme}>
-              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>
 
             <div className="relative">
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 text-white hover:text-white hover:bg-white/10"
+                className="flex items-center gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-green-700 text-sm font-medium">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white text-sm font-medium">
                   {user?.full_name?.charAt(0).toUpperCase()}
                 </div>
-                <span className="hidden md:block text-sm font-medium text-white">{user?.full_name}</span>
-                <ChevronDown className="h-4 w-4 text-white" />
+                <span className="hidden md:block text-sm font-medium text-gray-900">{user?.full_name}</span>
+                <ChevronDown className="h-4 w-4 text-gray-700" />
               </Button>
 
               {userMenuOpen && (
@@ -149,7 +142,7 @@ export default function AppLayout() {
         </main>
 
         {isMobile && (
-          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-green-800 bg-green-700">
+          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white">
             <div className="flex items-center justify-around">
               {bottomItems.map(item => (
                 <NavLink
@@ -158,7 +151,7 @@ export default function AppLayout() {
                   end={item.end}
                   className={({ isActive }) =>
                     `flex flex-col items-center gap-0.5 py-2 px-2 text-xs transition-colors ${
-                      isActive ? 'text-white' : 'text-green-100'
+                      isActive ? 'text-brand' : 'text-gray-500'
                     }`
                   }
                 >
@@ -167,9 +160,9 @@ export default function AppLayout() {
                 </NavLink>
               ))}
             </div>
-            <div className="flex justify-center gap-4 border-t border-green-800 py-2 text-[10px] text-green-200">
-              <a href="/privacy" className="hover:text-white">Privacidade</a>
-              <a href="/terms" className="hover:text-white">Termos</a>
+            <div className="flex justify-center gap-4 border-t border-gray-200 py-2 text-[10px] text-gray-500">
+              <a href="/privacy" className="hover:text-gray-900">Privacidade</a>
+              <a href="/terms" className="hover:text-gray-900">Termos</a>
             </div>
           </nav>
         )}

@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { getEmployees, createEmployee, deleteEmployee } from '@/services/storage'
-import { Search, Plus, Trash2 } from 'lucide-react'
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '@/services/storage'
+import { Search, Plus, Trash2, Edit } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
 
 interface Employee {
@@ -21,6 +21,7 @@ export default function EmployeeListPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ full_name: '', email: '', phone: '', role: '', department: '' })
 
   useEffect(() => {
@@ -36,17 +37,29 @@ export default function EmployeeListPage() {
     }
   }
 
-  const handleAddEmployee = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await createEmployee(formData)
+      if (editingId) {
+        await updateEmployee(editingId, formData)
+        toast.success('Colaborador atualizado')
+      } else {
+        await createEmployee(formData)
+        toast.success('Colaborador cadastrado')
+      }
       await loadEmployees()
       setFormData({ full_name: '', email: '', phone: '', role: '', department: '' })
+      setEditingId(null)
       setShowForm(false)
-      toast.success('Colaborador cadastrado')
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao cadastrar colaborador')
+      toast.error(err.message || 'Erro ao salvar colaborador')
     }
+  }
+
+  const handleEdit = (emp: Employee) => {
+    setFormData({ full_name: emp.full_name, email: emp.email, phone: emp.phone || '', role: emp.role, department: emp.department || '' })
+    setEditingId(emp.id)
+    setShowForm(true)
   }
 
   const handleDelete = async (id: string) => {
@@ -78,10 +91,10 @@ export default function EmployeeListPage() {
         {showForm && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Cadastrar Colaborador</CardTitle>
+              <CardTitle>{editingId ? 'Editar Colaborador' : 'Cadastrar Colaborador'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleAddEmployee} className="grid gap-4 md:grid-cols-2">
+              <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label>Nome Completo</Label>
                   <Input value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} required />
@@ -103,8 +116,8 @@ export default function EmployeeListPage() {
                   <Input value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} />
                 </div>
                 <div className="md:col-span-2 flex justify-end gap-2">
-                  <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Cancelar</Button>
-                  <Button type="submit">Salvar</Button>
+                  <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null) }}>Cancelar</Button>
+                  <Button type="submit">{editingId ? 'Salvar' : 'Cadastrar'}</Button>
                 </div>
               </form>
             </CardContent>
@@ -116,7 +129,7 @@ export default function EmployeeListPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Colaboradores</CardTitle>
               <div className="flex gap-2">
-                <Button onClick={() => setShowForm(!showForm)}>
+                <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ full_name: '', email: '', phone: '', role: '', department: '' }) }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Colaborador
                 </Button>
@@ -152,9 +165,14 @@ export default function EmployeeListPage() {
                       <td className="p-2">{emp.role}</td>
                       <td className="p-2">{emp.department || '-'}</td>
                       <td className="p-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(emp.id)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(emp)} title="Editar">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(emp.id)} title="Excluir">
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

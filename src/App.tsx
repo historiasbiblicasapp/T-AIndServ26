@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { OfflineProvider } from '@/contexts/OfflineProvider'
 import { AIProvider } from '@/features/ai/AIProvider'
@@ -76,18 +75,16 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <OfflineProvider>
-          <AIProvider>
-            <ErrorBoundary>
-              <AppRoutes />
-              <LGPDConsent />
-            </ErrorBoundary>
-            <Toaster />
-          </AIProvider>
-        </OfflineProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <OfflineProvider>
+        <AIProvider>
+          <ErrorBoundary>
+            <AppRoutes />
+            <LGPDConsent />
+          </ErrorBoundary>
+          <Toaster />
+        </AIProvider>
+      </OfflineProvider>
+    </AuthProvider>
   )
 }

@@ -1,8 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { ArrowLeft, Printer, ChevronDown, ChevronUp } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
-import { getWorkOrderById } from '@/services/storage'
+import { getWorkOrderById, getRecursos, getEscopoItems, getWorkOrderExecutantes, getAssinaturas } from '@/services/storage'
 import { useEffect, useState } from 'react'
 
 interface OS {
@@ -24,18 +24,37 @@ interface OS {
   cep: string
   numeroEndereco: string
   telefone: string
-  servicos: { tipo: string; executante: string; qualificacao: string }[]
-  escopo: { n: number; servico: string; pessoas: number; horas: string }[]
-  recursos: { nome: string; unidade: string; quantidade: number; valorUnitario: number; total: number }[]
-  maoObra: number
-  deslocamento: number
-  imposto: number
-  desconto: number
-  valorTotal: number
-  executante: string
-  dataExecucao: string
-  assinaturaEmitente?: string
-  assinaturaCliente?: string
+}
+
+interface Recurso {
+  id: string
+  name: string
+  unit: string
+  quantity: number
+  unit_value: number
+  total: number
+}
+
+interface EscopoItem {
+  id: string
+  service: string
+  people: number
+  hours: string
+}
+
+interface Executante {
+  id: string
+  employee_id: string
+  type: string
+  qualification: string
+  employee?: { full_name: string }
+}
+
+interface Assinatura {
+  id: string
+  tipo: string
+  nome: string
+  cpf: string
 }
 
 export default function OSViewPage() {
@@ -43,6 +62,24 @@ export default function OSViewPage() {
   const navigate = useNavigate()
   const [data, setData] = useState<OS | null>(null)
   const [loading, setLoading] = useState(true)
+  const [recursos, setRecursos] = useState<Recurso[]>([])
+  const [escopo, setEscopo] = useState<EscopoItem[]>([])
+  const [executantes, setExecutantes] = useState<Executante[]>([])
+  const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    executantes: true,
+    escopo: true,
+    recursos: true,
+    anexos: true,
+    assinaturas: true,
+    checklist: true,
+    historico: true,
+    execucoes: true,
+  })
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -72,18 +109,20 @@ export default function OSViewPage() {
           cep: item.cep || '',
           numeroEndereco: item.numero_endereco || '',
           telefone: item.telefone || '',
-          servicos: [],
-          escopo: [],
-          recursos: [],
-          maoObra: 0,
-          deslocamento: 0,
-          imposto: 0,
-          desconto: 0,
-          valorTotal: 0,
-          executante: '',
-          dataExecucao: '',
         }
         setData(mapped)
+
+        const [recursosData, escopoData, executantesData, assinaturasData] = await Promise.all([
+          getRecursos(id),
+          getEscopoItems(id),
+          getWorkOrderExecutantes(id),
+          getAssinaturas(id),
+        ])
+
+        setRecursos(recursosData as Recurso[])
+        setEscopo(escopoData as EscopoItem[])
+        setExecutantes(executantesData as any[])
+        setAssinaturas(assinaturasData as any[])
       } catch {
         setData(null)
       } finally {
@@ -110,6 +149,8 @@ export default function OSViewPage() {
     )
   }
 
+  const recursosTotal = recursos.reduce((acc, item) => acc + item.total, 0)
+
   return (
     <div className="min-h-screen bg-white">
       <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white p-4">
@@ -132,7 +173,7 @@ export default function OSViewPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl p-4 print:mx-0">
+      <div className="mx-auto max-w-5xl overflow-y-auto p-4 print:mx-0">
         <div className="mb-6 flex items-center justify-between border-b pb-4">
           <div>
             <h1 className="text-2xl font-bold">Ordem de Serviço</h1>
@@ -179,156 +220,166 @@ export default function OSViewPage() {
         </div>
 
         <div className="mb-6 rounded-lg border p-4">
-          <h2 className="mb-3 font-semibold">Serviços diversos</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <p className="mb-2 text-sm font-medium">Dados do Serviço</p>
-              <ul className="space-y-1 text-sm">
-                {data.servicos.map((item, idx) => (
-                  <li key={idx} className="border-b py-1 last:border-0">
-                    {item.tipo || '—'}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="mb-2 text-sm font-medium">Executantes</p>
-              <ul className="space-y-1 text-sm">
-                {data.servicos.map((item, idx) => (
-                  <li key={idx} className="border-b py-1 last:border-0">
-                    {item.executante || '—'}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="mb-2 text-sm font-medium">Qualificação</p>
-              <ul className="space-y-1 text-sm">
-                {data.servicos.map((item, idx) => (
-                  <li key={idx} className="border-b py-1 last:border-0">
-                    {item.qualificacao || '—'}
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('executantes')}>
+            <h2 className="mb-3 font-semibold">Serviços diversos</h2>
+            {openSections.executantes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
+          {openSections.executantes && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <p className="mb-2 text-sm font-medium">Dados do Serviço</p>
+                <ul className="space-y-1 text-sm">
+                  {executantes.length > 0 ? executantes.map((item, _idx) => (
+                    <li key={item.id} className="border-b py-1 last:border-0">
+                      {item.type || '—'}
+                    </li>
+                  )) : <li className="text-gray-500">—</li>}
+                </ul>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-medium">Executantes</p>
+                <ul className="space-y-1 text-sm">
+                  {executantes.length > 0 ? executantes.map((item, _idx) => (
+                    <li key={item.id} className="border-b py-1 last:border-0">
+                      {item.employee?.full_name || item.employee_id || '—'}
+                    </li>
+                  )) : <li className="text-gray-500">—</li>}
+                </ul>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-medium">Qualificação</p>
+                <ul className="space-y-1 text-sm">
+                  {executantes.length > 0 ? executantes.map((item, _idx) => (
+                    <li key={item.id} className="border-b py-1 last:border-0">
+                      {item.qualification || '—'}
+                    </li>
+                  )) : <li className="text-gray-500">—</li>}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mb-6 rounded-lg border p-4">
-          <h2 className="mb-3 font-semibold">Escopo do Serviço</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b">
-                <tr>
-                  <th className="py-2">Nº</th>
-                  <th className="py-2">Escopo do Serviço</th>
-                  <th className="py-2 text-center">Pessoas</th>
-                  <th className="py-2 text-center">Horas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.escopo.length > 0 ? (
-                  data.escopo.map((item) => (
-                    <tr key={item.n} className="border-b last:border-0">
-                      <td className="py-2">{item.n}º</td>
-                      <td className="py-2">{item.servico}</td>
-                      <td className="py-2 text-center">{item.pessoas}</td>
-                      <td className="py-2 text-center">{item.horas}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="py-4 text-center text-gray-500">
-                      Nenhum item de escopo cadastrado
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('escopo')}>
+            <h2 className="mb-3 font-semibold">Escopo do Serviço</h2>
+            {openSections.escopo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
+          {openSections.escopo && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b">
+                  <tr>
+                    <th className="py-2">Nº</th>
+                    <th className="py-2">Escopo do Serviço</th>
+                    <th className="py-2 text-center">Pessoas</th>
+                    <th className="py-2 text-center">Horas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {escopo.length > 0 ? (
+                    escopo.map((item, _idx) => (
+                      <tr key={item.id} className="border-b last:border-0">
+                        <td className="py-2">{_idx + 1}º</td>
+                        <td className="py-2">{item.service}</td>
+                        <td className="py-2 text-center">{item.people}</td>
+                        <td className="py-2 text-center">{item.hours}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                        Nenhum item de escopo cadastrado
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        {data.dataExecucao && (
-          <div className="mb-6 rounded-lg border p-4">
-            <h2 className="mb-2 font-semibold">Execução</h2>
-            <p className="text-sm">Já realizado ({data.dataExecucao})</p>
-          </div>
-        )}
-
         <div className="mb-6 rounded-lg border p-4">
-          <h2 className="mb-3 font-semibold">Recursos</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b">
-                <tr>
-                  <th className="py-2">Recurso</th>
-                  <th className="py-2">UNI.</th>
-                  <th className="py-2 text-center">QUANT.</th>
-                  <th className="py-2 text-right">VALOR (U)</th>
-                  <th className="py-2 text-right">TOTAL</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recursos.length > 0 ? (
-                  data.recursos.map((item, idx) => (
-                    <tr key={idx} className="border-b last:border-0">
-                      <td className="py-2">{item.nome}</td>
-                      <td className="py-2">{item.unidade}</td>
-                      <td className="py-2 text-center">{item.quantidade}</td>
-                      <td className="py-2 text-right">R$ {item.valorUnitario.toFixed(2)}</td>
-                      <td className="py-2 text-right">R$ {item.total.toFixed(2)}</td>
+          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
+            <h2 className="mb-3 font-semibold">Recursos</h2>
+            {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+          {openSections.recursos && (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="py-2">Recurso</th>
+                      <th className="py-2">UNI.</th>
+                      <th className="py-2 text-center">QUANT.</th>
+                      <th className="py-2 text-right">VALOR (U)</th>
+                      <th className="py-2 text-right">TOTAL</th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-4 text-center text-gray-500">
-                      Nenhum recurso cadastrado
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 space-y-1 text-sm">
-            <div className="flex justify-between border-b py-1">
-              <span>Recursos</span>
-              <span>R$ {data.recursos.reduce((acc, item) => acc + item.total, 0).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between border-b py-1">
-              <span>Mão de Obra</span>
-              <span>R$ {data.maoObra.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between border-b py-1">
-              <span>Deslocamento</span>
-              <span>R$ {data.deslocamento.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between border-b py-1 font-semibold">
-              <span>Sub Total</span>
-              <span>R$ {(data.recursos.reduce((acc, item) => acc + item.total, 0) + data.maoObra + data.deslocamento).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between border-b py-1">
-              <span>Imposto</span>
-              <span>R$ {data.imposto.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between border-b py-1">
-              <span>Desconto</span>
-              <span>R$ {data.desconto.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between py-1 text-base font-bold">
-              <span>Valor Total</span>
-              <span>R$ {data.valorTotal.toFixed(2)}</span>
-            </div>
-          </div>
+                  </thead>
+                  <tbody>
+                     {recursos.length > 0 ? (
+                       recursos.map((item, _idx) => (
+                         <tr key={item.id} className="border-b last:border-0">
+                          <td className="py-2">{item.name}</td>
+                          <td className="py-2">{item.unit}</td>
+                          <td className="py-2 text-center">{item.quantity}</td>
+                          <td className="py-2 text-right">R$ {Number(item.unit_value).toFixed(2)}</td>
+                          <td className="py-2 text-right">R$ {Number(item.total).toFixed(2)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-4 text-center text-gray-500">
+                          Nenhum recurso cadastrado
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 space-y-1 text-sm">
+                <div className="flex justify-between border-b py-1">
+                  <span>Recursos</span>
+                  <span>R$ {recursosTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between border-b py-1">
+                  <span>Mão de Obra</span>
+                  <span>R$ 0,00</span>
+                </div>
+                <div className="flex justify-between border-b py-1">
+                  <span>Deslocamento</span>
+                  <span>R$ 0,00</span>
+                </div>
+                <div className="flex justify-between border-b py-1 font-semibold">
+                  <span>Sub Total</span>
+                  <span>R$ {recursosTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between border-b py-1">
+                  <span>Imposto</span>
+                  <span>R$ 0,00</span>
+                </div>
+                <div className="flex justify-between border-b py-1">
+                  <span>Desconto</span>
+                  <span>R$ 0,00</span>
+                </div>
+                <div className="flex justify-between py-1 text-base font-bold">
+                  <span>Valor Total</span>
+                  <span>R$ {recursosTotal.toFixed(2)}</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-lg border p-4">
             <p className="mb-8 text-sm font-medium">Assinatura Emitente</p>
-            <p className="text-sm text-gray-500">{data.assinaturaEmitente || '_________________________'}</p>
+            <p className="text-sm text-gray-500">{assinaturas.find(a => a.tipo === 'executante')?.nome || '_________________________'}</p>
           </div>
           <div className="rounded-lg border p-4">
             <p className="mb-8 text-sm font-medium">Assinatura Cliente</p>
-            <p className="text-sm text-gray-500">{data.assinaturaCliente || '_________________________'}</p>
+            <p className="text-sm text-gray-500">{assinaturas.find(a => a.tipo === 'cliente')?.nome || '_________________________'}</p>
           </div>
         </div>
       </div>

@@ -252,13 +252,13 @@ export default function MaintenancePage() {
                       <td className="p-2">{getEquipmentName(m.equipment_id)}</td>
                       <td className="p-2">{m.title}</td>
                       <td className="p-2 capitalize">{m.type}</td>
-                      <td className="p-2">
-                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                          m.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                          m.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                          m.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                       <td className="p-2">
+                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                           m.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                           m.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                           m.status === 'completed' ? 'bg-brand/10 text-brand' :
+                           'bg-red-100 text-red-800'
+                         }`}>
                           {m.status === 'scheduled' ? 'Programada' :
                            m.status === 'in_progress' ? 'Em Andamento' :
                            m.status === 'completed' ? 'Concluída' : 'Atrasada'}
