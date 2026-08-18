@@ -255,7 +255,7 @@ export default function ClientListPage() {
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um estado" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 overflow-y-auto">
                       {BRAZILIAN_STATES.map(state => (
                         <SelectItem key={state.value} value={state.value}>{state.label}</SelectItem>
                       ))}
@@ -268,7 +268,7 @@ export default function ClientListPage() {
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma cidade" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 overflow-y-auto">
                       {filteredCityNames.map(city => (
                         <SelectItem key={city} value={city}>{city}</SelectItem>
                       ))}

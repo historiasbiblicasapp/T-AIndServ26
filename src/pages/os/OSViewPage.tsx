@@ -152,8 +152,8 @@ export default function OSViewPage() {
   const recursosTotal = recursos.reduce((acc, item) => acc + item.total, 0)
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white p-4">
+    <div className="min-h-screen bg-white print:min-h-0 print:p-0">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white p-4 print:hidden">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/work-orders')}>
             <ArrowLeft className="h-5 w-5" />

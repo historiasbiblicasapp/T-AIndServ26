@@ -214,7 +214,15 @@ export default function WorkOrdersPage() {
         getHistoricoOS(osId),
         getExecucoes(osId),
       ])
-      setExecutantes(executantesData)
+
+      const employeeMap = new Map(employees.map(e => [e.id, e]))
+
+      const enrichedExecutantes = (executantesData as any[]).map((exec: any) => ({
+        ...exec,
+        employee: exec.employee || (exec.employee_id ? employeeMap.get(exec.employee_id) : undefined),
+      }))
+
+      setExecutantes(enrichedExecutantes)
       setEscopo(escopoData)
       setRecursos(recursosData)
       setAnexos(anexosData)
