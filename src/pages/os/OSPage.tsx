@@ -27,11 +27,7 @@ import {
   deleteWorkOrder,
   getClients,
   getEquipments,
-  getEmployees,
   searchCep,
-  getWorkOrderExecutantes,
-  createWorkOrderExecutante,
-  deleteWorkOrderExecutante,
   getEscopoItems,
   createEscopoItem,
   deleteEscopoItem,
@@ -50,6 +46,10 @@ import {
   getHistoricoOS,
   getExecucoes,
   createExecucao,
+  getLaborRoles,
+  getWorkOrderLabor,
+  createWorkOrderLabor,
+  deleteWorkOrderLabor,
 } from '@/services/storage'
 import type { Client } from '@/types/clients'
 
@@ -86,7 +86,6 @@ export default function WorkOrdersPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [clients, setClients] = useState<Client[]>([])
   const [equipments, setEquipments] = useState<{ id: string; name: string; code: string }[]>([])
-  const [employees, setEmployees] = useState<{ id: string; full_name: string }[]>([])
   const [loadingCep, setLoadingCep] = useState(false)
   const [form, setForm] = useState<OS>({
     id: '',
@@ -110,24 +109,30 @@ export default function WorkOrdersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
 
-  const [executantes, setExecutantes] = useState<any[]>([])
   const [escopo, setEscopo] = useState<any[]>([])
   const [recursos, setRecursos] = useState<any[]>([])
+  const [laborItems, setLaborItems] = useState<any[]>([])
+  const [laborRoles, setLaborRoles] = useState<any[]>([])
   const [anexos, setAnexos] = useState<any[]>([])
   const [assinaturas, setAssinaturas] = useState<any[]>([])
   const [checklist, setChecklist] = useState<any[]>([])
   const [historico, setHistorico] = useState<any[]>([])
   const [execucoes, setExecucoes] = useState<any[]>([])
+  const [displacementType, setDisplacementType] = useState<'none' | 'individual' | 'collective'>('none')
+  const [displacementValue, setDisplacementValue] = useState(0)
+  const [taxRate, setTaxRate] = useState(0)
+  const [discount, setDiscount] = useState(0)
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    executantes: false,
     escopo: false,
     recursos: false,
+    labor: false,
     anexos: false,
     assinaturas: false,
     checklist: false,
     historico: false,
     execucoes: false,
+    values: false,
   })
 
   const loadOS = async () => {
@@ -193,10 +198,10 @@ export default function WorkOrdersPage() {
     }
   }
 
-  const loadEmployees = async () => {
+  const loadLaborRoles = async () => {
     try {
-      const data = await getEmployees()
-      setEmployees(data.map((e: any) => ({ id: e.id, full_name: e.full_name })))
+      const data = await getLaborRoles()
+      setLaborRoles(data as any[])
     } catch {
       // ignore
     }
@@ -204,8 +209,7 @@ export default function WorkOrdersPage() {
 
   const loadRelatedData = async (osId: string) => {
     try {
-      const [executantesData, escopoData, recursosData, anexosData, assinaturasData, checklistData, historicoData, execucoesData] = await Promise.all([
-        getWorkOrderExecutantes(osId),
+      const [escopoData, recursosData, anexosData, assinaturasData, checklistData, historicoData, execucoesData, laborData] = await Promise.all([
         getEscopoItems(osId),
         getRecursos(osId),
         getAnexos(osId),
@@ -213,16 +217,9 @@ export default function WorkOrdersPage() {
         getChecklistItens(undefined, osId),
         getHistoricoOS(osId),
         getExecucoes(osId),
+        getWorkOrderLabor(osId),
       ])
 
-      const employeeMap = new Map(employees.map(e => [e.id, e]))
-
-      const enrichedExecutantes = (executantesData as any[]).map((exec: any) => ({
-        ...exec,
-        employee: exec.employee || (exec.employee_id ? employeeMap.get(exec.employee_id) : undefined),
-      }))
-
-      setExecutantes(enrichedExecutantes)
       setEscopo(escopoData)
       setRecursos(recursosData)
       setAnexos(anexosData)
@@ -230,6 +227,7 @@ export default function WorkOrdersPage() {
       setChecklist(checklistData)
       setHistorico(historicoData)
       setExecucoes(execucoesData)
+      setLaborItems(laborData)
     } catch {
       // ignore
     }
@@ -239,7 +237,7 @@ export default function WorkOrdersPage() {
     loadOS()
     loadClients()
     loadEquipments()
-    loadEmployees()
+    loadLaborRoles()
   }, [])
 
   useEffect(() => {
@@ -276,7 +274,6 @@ export default function WorkOrdersPage() {
       telefone: '',
     })
     setEditingId(null)
-    setExecutantes([])
     setEscopo([])
     setRecursos([])
     setAnexos([])
@@ -284,6 +281,11 @@ export default function WorkOrdersPage() {
     setChecklist([])
     setHistorico([])
     setExecucoes([])
+    setLaborItems([])
+    setDisplacementType('none')
+    setDisplacementValue(0)
+    setTaxRate(0)
+    setDiscount(0)
   }
 
   const openCreate = () => {
@@ -291,10 +293,11 @@ export default function WorkOrdersPage() {
     setOpenDialog(true)
   }
 
-  const openEdit = (item: OS) => {
+  const openEdit = async (item: OS) => {
     setForm(item)
     setEditingId(item.id)
     setOpenDialog(true)
+    await loadRelatedData(item.id)
   }
 
   const handleClientChange = async (clientId: string) => {
@@ -359,7 +362,13 @@ export default function WorkOrdersPage() {
         cep: form.cep,
         numero_endereco: form.numeroEndereco,
         telefone: form.telefone,
+        displacement_type: displacementType === 'none' ? null : displacementType,
+        displacement_value: displacementValue,
+        tax_rate: taxRate,
+        discount: discount,
       }
+
+      let savedOrderId = editingId
 
       if (editingId) {
         await updateWorkOrder(editingId, payload)
@@ -367,7 +376,24 @@ export default function WorkOrdersPage() {
       } else {
         const created = await createWorkOrder(payload)
         setForm((prev) => ({ ...prev, id: created.id }))
+        savedOrderId = created.id
         toast.success('Ordem de serviço criada')
+      }
+
+      if (savedOrderId && laborItems.length > 0) {
+        const existingLabor = await getWorkOrderLabor(savedOrderId)
+        for (const existing of existingLabor) {
+          await deleteWorkOrderLabor(existing.id, savedOrderId)
+        }
+        for (const item of laborItems) {
+          await createWorkOrderLabor({
+            work_order_id: savedOrderId,
+            role_id: item.role_id,
+            employee_id: item.employee_id,
+            hours: item.hours,
+            total: item.total,
+          })
+        }
       }
 
       await loadOS()
@@ -543,50 +569,82 @@ export default function WorkOrdersPage() {
                   <Label>Itens da OS</Label>
 
                   <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('executantes')}>
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('labor')}>
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        <span className="text-sm font-medium">Executantes</span>
+                        <span className="text-sm font-medium">Mão de Obra</span>
                       </div>
-                      {openSections.executantes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.labor ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
-                    {openSections.executantes && (
+                    {openSections.labor && (
                       <div className="mt-2 space-y-2">
-                        <div className="flex gap-2">
-                          <Select onValueChange={async (employeeId) => {
-                            if (editingId && employeeId) {
-                              await createWorkOrderExecutante({
+                        <div className="grid grid-cols-12 gap-2 items-end">
+                          <div className="col-span-5">
+                            <Label>Cargo</Label>
+                            <Select onValueChange={async (roleId) => {
+                              if (!editingId || !roleId) return
+                              await createWorkOrderLabor({
                                 work_order_id: editingId,
-                                employee_id: employeeId,
-                                type: '',
-                                qualification: '',
+                                role_id: roleId,
+                                employee_id: null,
+                                hours: 0,
+                                total: 0,
                               })
                               await loadRelatedData(editingId)
-                              toast.success('Executante adicionado')
-                            }
-                          }}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Selecione um colaborador" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {employees.map((emp) => (
-                                <SelectItem key={emp.id} value={emp.id}>
-                                  {emp.full_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            }}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um cargo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {laborRoles.map(role => (
+                                  <SelectItem key={role.id} value={role.id}>{role.name} ({role.code}) - R$ {Number(role.hourly_rate).toFixed(2)}/h</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="col-span-2">
+                            <Label>Horas</Label>
+                            <Input placeholder="Horas" id="labor-hours" type="number" />
+                          </div>
+                          <div className="col-span-2">
+                            <Label>Pessoas</Label>
+                            <Input placeholder="Pessoas" id="labor-people" type="number" />
+                          </div>
+                          <div className="col-span-2">
+                            <Label>Item</Label>
+                            <Input placeholder="Item" id="labor-item" />
+                          </div>
+                          <div className="col-span-1">
+                            <Button className="w-full" onClick={async () => {
+                              const roleId = (document.querySelector('[data-testid="labor-role"]') as HTMLSelectElement)?.value
+                              const hours = Number((document.getElementById('labor-hours') as HTMLInputElement)?.value || 0)
+                              const people = Number((document.getElementById('labor-people') as HTMLInputElement)?.value || 0)
+                              if (!roleId || !editingId) return
+                              const role = laborRoles.find(r => r.id === roleId)
+                              const total = hours * people * Number(role?.hourly_rate || 0)
+                              await createWorkOrderLabor({
+                                work_order_id: editingId,
+                                role_id: roleId,
+                                employee_id: null,
+                                hours,
+                                total,
+                              })
+                              await loadRelatedData(editingId)
+                            }}>
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                         <div className="space-y-1">
-                          {executantes.map((exec: any) => (
-                            <div key={exec.id} className="flex items-center justify-between p-2 border rounded">
+                          {laborItems.map((item: any) => (
+                            <div key={item.id} className="flex items-center justify-between p-2 border rounded">
                               <div>
-                                <p className="text-sm font-medium">{exec.employee?.full_name || 'Sem nome'}</p>
-                                <p className="text-xs text-gray-500">{exec.qualification || 'Sem qualificação'}</p>
+                                <p className="text-sm font-medium">{item.role?.name || 'Sem cargo'} {item.employee?.full_name ? `• ${item.employee.full_name}` : ''}</p>
+                                <p className="text-xs text-gray-500">{item.hours}h • R$ {Number(item.total).toFixed(2)}</p>
                               </div>
                               <Button variant="ghost" size="icon" onClick={async () => {
                                 if (editingId) {
-                                  await deleteWorkOrderExecutante(exec.id, editingId)
+                                  await deleteWorkOrderLabor(item.id, editingId)
                                   await loadRelatedData(editingId)
                                 }
                               }}>
@@ -609,7 +667,7 @@ export default function WorkOrdersPage() {
                     </div>
                     {openSections.escopo && (
                       <div className="mt-2 space-y-2">
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid gap-2" style={{ gridTemplateColumns: '2fr 1fr 1fr auto' }}>
                           <Input placeholder="Item" id="escopo-item" />
                           <Input placeholder="Pessoas" id="escopo-people" type="number" />
                           <Input placeholder="Horas" id="escopo-hours" />
@@ -662,30 +720,40 @@ export default function WorkOrdersPage() {
                     </div>
                     {openSections.recursos && (
                       <div className="mt-2 space-y-2">
-                        <div className="grid grid-cols-5 gap-2">
-                          <Input placeholder="Nome" id="recurso-nome" />
-                          <Input placeholder="UNI." id="recurso-unidade" />
-                          <Input placeholder="Qtd" id="recurso-qtd" type="number" />
-                          <Input placeholder="Valor" id="recurso-valor" type="number" />
-                          <Button onClick={async () => {
-                            const name = (document.getElementById('recurso-nome') as HTMLInputElement)?.value
-                            const unit = (document.getElementById('recurso-unidade') as HTMLInputElement)?.value
-                            const quantity = Number((document.getElementById('recurso-qtd') as HTMLInputElement)?.value || 0)
-                            const unit_value = Number((document.getElementById('recurso-valor') as HTMLInputElement)?.value || 0)
-                            const total = quantity * unit_value
-                            if (!name || !editingId) return
-                            await createRecurso({
-                              work_order_id: editingId,
-                              name,
-                              unit,
-                              quantity,
-                              unit_value,
-                              total,
-                            })
-                            await loadRelatedData(editingId)
-                          }}>
-                            <Plus className="h-4 w-4" />
-                          </Button>
+                        <div className="grid grid-cols-12 gap-2">
+                          <div className="col-span-4">
+                            <Input placeholder="Nome" id="recurso-nome" />
+                          </div>
+                          <div className="col-span-2">
+                            <Input placeholder="UNI." id="recurso-unidade" />
+                          </div>
+                          <div className="col-span-2">
+                            <Input placeholder="Qtd" id="recurso-qtd" type="number" />
+                          </div>
+                          <div className="col-span-2">
+                            <Input placeholder="Valor" id="recurso-valor" type="number" />
+                          </div>
+                          <div className="col-span-2">
+                            <Button className="w-full" onClick={async () => {
+                              const name = (document.getElementById('recurso-nome') as HTMLInputElement)?.value
+                              const unit = (document.getElementById('recurso-unidade') as HTMLInputElement)?.value
+                              const quantity = Number((document.getElementById('recurso-qtd') as HTMLInputElement)?.value || 0)
+                              const unit_value = Number((document.getElementById('recurso-valor') as HTMLInputElement)?.value || 0)
+                              const total = quantity * unit_value
+                              if (!name || !editingId) return
+                              await createRecurso({
+                                work_order_id: editingId,
+                                name,
+                                unit,
+                                quantity,
+                                unit_value,
+                                total,
+                              })
+                              await loadRelatedData(editingId)
+                            }}>
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                         <div className="space-y-1">
                           {recursos.map((item: any) => (
@@ -704,6 +772,44 @@ export default function WorkOrdersPage() {
                               </Button>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border rounded-lg p-2">
+                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Valores</span>
+                      </div>
+                      {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                    {openSections.values && (
+                      <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Deslocamento</Label>
+                          <Select value={displacementType} onValueChange={(value: 'none' | 'individual' | 'collective') => setDisplacementType(value)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sem deslocamento</SelectItem>
+                              <SelectItem value="individual">Individual</SelectItem>
+                              <SelectItem value="collective">Coletivo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Valor do Deslocamento (R$)</Label>
+                          <Input type="number" step="0.01" value={displacementValue} onChange={(e) => setDisplacementValue(Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Imposto (%)</Label>
+                          <Input type="number" step="0.01" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Desconto (R$)</Label>
+                          <Input type="number" step="0.01" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} />
                         </div>
                       </div>
                     )}

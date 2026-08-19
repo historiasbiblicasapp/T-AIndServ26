@@ -4,9 +4,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '@/services/storage'
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee, getLaborRoles } from '@/services/storage'
 import { Search, Plus, Trash2, Edit } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface Employee {
   id: string
@@ -17,8 +24,16 @@ interface Employee {
   department?: string
 }
 
+interface LaborRole {
+  id: string
+  name: string
+  code: string
+  hourly_rate: number
+}
+
 export default function EmployeeListPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [laborRoles, setLaborRoles] = useState<LaborRole[]>([])
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -26,7 +41,17 @@ export default function EmployeeListPage() {
 
   useEffect(() => {
     loadEmployees()
+    loadLaborRoles()
   }, [])
+
+  const loadLaborRoles = async () => {
+    try {
+      const data = await getLaborRoles()
+      setLaborRoles(data as LaborRole[])
+    } catch {
+      // ignore
+    }
+  }
 
   const loadEmployees = async () => {
     try {
@@ -78,6 +103,8 @@ export default function EmployeeListPage() {
     emp.email.toLowerCase().includes(search.toLowerCase())
   )
 
+  const roleLabel = (code: string) => laborRoles.find(r => r.code === code)?.name || code
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
@@ -109,7 +136,16 @@ export default function EmployeeListPage() {
                 </div>
                 <div>
                   <Label>Cargo</Label>
-                  <Input value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} required />
+                  <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cargo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {laborRoles.map(role => (
+                        <SelectItem key={role.id} value={role.code}>{role.name} ({role.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="md:col-span-2">
                   <Label>Departamento</Label>
@@ -162,7 +198,7 @@ export default function EmployeeListPage() {
                     <tr key={emp.id} className="border-b">
                       <td className="p-2">{emp.full_name}</td>
                       <td className="p-2">{emp.email}</td>
-                      <td className="p-2">{emp.role}</td>
+                      <td className="p-2">{roleLabel(emp.role)}</td>
                       <td className="p-2">{emp.department || '-'}</td>
                       <td className="p-2">
                         <div className="flex gap-1">

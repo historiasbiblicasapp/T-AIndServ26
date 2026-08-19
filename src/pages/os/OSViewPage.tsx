@@ -2,29 +2,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer, ChevronDown, ChevronUp } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
-import { getWorkOrderById, getRecursos, getEscopoItems, getWorkOrderExecutantes, getAssinaturas } from '@/services/storage'
+import { getWorkOrderWithCalculations } from '@/services/storage'
 import { useEffect, useState } from 'react'
-
-interface OS {
-  id: string
-  numero: string
-  titulo: string
-  equipamento: string
-  categoria: string
-  status: string
-  responsavel: string
-  dataAbertura: string
-  observacoes?: string
-  cliente: string
-  cnpj: string
-  empresa: string
-  endereco: string
-  cidade: string
-  estado: string
-  cep: string
-  numeroEndereco: string
-  telefone: string
-}
 
 interface Recurso {
   id: string
@@ -42,12 +21,12 @@ interface EscopoItem {
   hours: string
 }
 
-interface Executante {
+interface LaborItem {
   id: string
-  employee_id: string
-  type: string
-  qualification: string
+  role?: { name: string; code: string; hourly_rate: number }
   employee?: { full_name: string }
+  hours: number
+  total: number
 }
 
 interface Assinatura {
@@ -60,21 +39,23 @@ interface Assinatura {
 export default function OSViewPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [data, setData] = useState<OS | null>(null)
+  const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [recursos, setRecursos] = useState<Recurso[]>([])
   const [escopo, setEscopo] = useState<EscopoItem[]>([])
-  const [executantes, setExecutantes] = useState<Executante[]>([])
+  const [laborItems, setLaborItems] = useState<LaborItem[]>([])
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     executantes: true,
     escopo: true,
     recursos: true,
+    labor: true,
     anexos: true,
     assinaturas: true,
     checklist: true,
     historico: true,
     execucoes: true,
+    values: true,
   })
 
   const toggleSection = (section: string) => {
@@ -85,44 +66,16 @@ export default function OSViewPage() {
     const load = async () => {
       if (!id) return
       try {
-        const item = await getWorkOrderById(id)
-        if (!item) {
+        const result = await getWorkOrderWithCalculations(id)
+        if (!result) {
           setData(null)
           return
         }
-        const mapped: OS = {
-          id: item.id,
-          numero: item.number || `OS-${String(item.id).slice(-3)}`,
-          titulo: item.title || '',
-          equipamento: item.equipment_id || '',
-          categoria: item.type === 'preventive' ? 'Preventiva' : item.type === 'predictive' ? 'Preditiva' : 'Corretiva',
-          status: item.status || 'Aberta',
-          responsavel: item.assigned_to || '',
-          dataAbertura: item.planned_date || '',
-          observacoes: item.description || '',
-          cliente: item.cliente || '',
-          cnpj: item.cnpj || '',
-          empresa: item.empresa || '',
-          endereco: item.endereco || '',
-          cidade: item.cidade || '',
-          estado: item.estado || '',
-          cep: item.cep || '',
-          numeroEndereco: item.numero_endereco || '',
-          telefone: item.telefone || '',
-        }
-        setData(mapped)
-
-        const [recursosData, escopoData, executantesData, assinaturasData] = await Promise.all([
-          getRecursos(id),
-          getEscopoItems(id),
-          getWorkOrderExecutantes(id),
-          getAssinaturas(id),
-        ])
-
-        setRecursos(recursosData as Recurso[])
-        setEscopo(escopoData as EscopoItem[])
-        setExecutantes(executantesData as any[])
-        setAssinaturas(assinaturasData as any[])
+        setData(result)
+        setRecursos(result.recursos || [])
+        setEscopo(result.escopo || [])
+        setLaborItems(result.labor || [])
+        setAssinaturas([])
       } catch {
         setData(null)
       } finally {
@@ -149,7 +102,14 @@ export default function OSViewPage() {
     )
   }
 
-  const recursosTotal = recursos.reduce((acc, item) => acc + item.total, 0)
+  const recursosTotal = recursos.reduce((acc, item) => acc + Number(item.total || 0), 0)
+  const laborTotal = laborItems.reduce((acc, item) => acc + Number(item.total || 0), 0)
+  const displacement = Number(data?.displacement_value || 0)
+  const subtotal = recursosTotal + laborTotal + displacement
+  const taxRate = Number(data?.tax_rate || 0)
+  const tax = subtotal * (taxRate / 100)
+  const discount = Number(data?.discount || 0)
+  const total = subtotal + tax - discount
 
   return (
     <div className="min-h-screen bg-white print:min-h-0 print:p-0">
@@ -220,41 +180,78 @@ export default function OSViewPage() {
         </div>
 
         <div className="mb-6 rounded-lg border p-4">
-          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('executantes')}>
-            <h2 className="mb-3 font-semibold">Serviços diversos</h2>
-            {openSections.executantes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('labor')}>
+            <h2 className="mb-3 font-semibold">Mão de Obra</h2>
+            {openSections.labor ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
-          {openSections.executantes && (
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <p className="mb-2 text-sm font-medium">Dados do Serviço</p>
-                <ul className="space-y-1 text-sm">
-                  {executantes.length > 0 ? executantes.map((item, _idx) => (
-                    <li key={item.id} className="border-b py-1 last:border-0">
-                      {item.type || '—'}
-                    </li>
-                  )) : <li className="text-gray-500">—</li>}
-                </ul>
+          {openSections.labor && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b">
+                  <tr>
+                    <th className="py-2">Cargo</th>
+                    <th className="py-2">Executante</th>
+                    <th className="py-2 text-center">Horas</th>
+                    <th className="py-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {laborItems.length > 0 ? (
+                    laborItems.map((item: any) => (
+                      <tr key={item.id} className="border-b last:border-0">
+                        <td className="py-2">{item.role?.name || '—'}</td>
+                        <td className="py-2">{item.employee?.full_name || '—'}</td>
+                        <td className="py-2 text-center">{item.hours}</td>
+                        <td className="py-2 text-right">R$ {Number(item.total).toFixed(2)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                        Nenhuma mão de obra cadastrada
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-6 rounded-lg border p-4">
+          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
+            <h2 className="mb-3 font-semibold">Valores</h2>
+            {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+          {openSections.values && (
+            <div className="mt-4 space-y-1 text-sm">
+              <div className="flex justify-between border-b py-1">
+                <span>Recursos</span>
+                <span>R$ {recursosTotal.toFixed(2)}</span>
               </div>
-              <div>
-                <p className="mb-2 text-sm font-medium">Executantes</p>
-                <ul className="space-y-1 text-sm">
-                  {executantes.length > 0 ? executantes.map((item, _idx) => (
-                    <li key={item.id} className="border-b py-1 last:border-0">
-                      {item.employee?.full_name || item.employee_id || '—'}
-                    </li>
-                  )) : <li className="text-gray-500">—</li>}
-                </ul>
+              <div className="flex justify-between border-b py-1">
+                <span>Mão de Obra</span>
+                <span>R$ {laborTotal.toFixed(2)}</span>
               </div>
-              <div>
-                <p className="mb-2 text-sm font-medium">Qualificação</p>
-                <ul className="space-y-1 text-sm">
-                  {executantes.length > 0 ? executantes.map((item, _idx) => (
-                    <li key={item.id} className="border-b py-1 last:border-0">
-                      {item.qualification || '—'}
-                    </li>
-                  )) : <li className="text-gray-500">—</li>}
-                </ul>
+              <div className="flex justify-between border-b py-1">
+                <span>Deslocamento</span>
+                <span>R$ {displacement.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-b py-1 font-semibold">
+                <span>Sub Total</span>
+                <span>R$ {subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-b py-1">
+                <span>Imposto ({taxRate}%)</span>
+                <span>R$ {tax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-b py-1">
+                <span>Desconto</span>
+                <span>R$ {discount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between py-1 text-base font-bold">
+                <span>Valor Total</span>
+                <span>R$ {total.toFixed(2)}</span>
               </div>
             </div>
           )}
@@ -337,36 +334,6 @@ export default function OSViewPage() {
                     )}
                   </tbody>
                 </table>
-              </div>
-              <div className="mt-4 space-y-1 text-sm">
-                <div className="flex justify-between border-b py-1">
-                  <span>Recursos</span>
-                  <span>R$ {recursosTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-b py-1">
-                  <span>Mão de Obra</span>
-                  <span>R$ 0,00</span>
-                </div>
-                <div className="flex justify-between border-b py-1">
-                  <span>Deslocamento</span>
-                  <span>R$ 0,00</span>
-                </div>
-                <div className="flex justify-between border-b py-1 font-semibold">
-                  <span>Sub Total</span>
-                  <span>R$ {recursosTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-b py-1">
-                  <span>Imposto</span>
-                  <span>R$ 0,00</span>
-                </div>
-                <div className="flex justify-between border-b py-1">
-                  <span>Desconto</span>
-                  <span>R$ 0,00</span>
-                </div>
-                <div className="flex justify-between py-1 text-base font-bold">
-                  <span>Valor Total</span>
-                  <span>R$ {recursosTotal.toFixed(2)}</span>
-                </div>
               </div>
             </>
           )}

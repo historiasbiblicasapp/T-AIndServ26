@@ -127,6 +127,10 @@ create table if not exists public.work_orders (
   cep text,
   numero_endereco text,
   telefone text,
+  displacement_type text,
+  displacement_value numeric default 0,
+  tax_rate numeric default 0,
+  discount numeric default 0,
   created_at timestamp with time zone default now()
 );
 
@@ -259,6 +263,35 @@ create table if not exists public.brazilian_cities (
   ibge_code text
 );
 
+-- Labor roles (cargos e valores HH)
+create table if not exists public.labor_roles (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  code text not null unique,
+  hourly_rate numeric not null,
+  active boolean default true,
+  created_at timestamp with time zone default now()
+);
+
+-- Employee roles (vinculo funcionario x cargo)
+create table if not exists public.employee_roles (
+  id uuid primary key default uuid_generate_v4(),
+  employee_id uuid references public.employees(id) on delete cascade,
+  role_id uuid references public.labor_roles(id) on delete cascade,
+  created_at timestamp with time zone default now()
+);
+
+-- Work order labor (vinculo OS x cargo/executante/horas)
+create table if not exists public.work_order_labor (
+  id uuid primary key default uuid_generate_v4(),
+  work_order_id uuid references public.work_orders(id) on delete cascade,
+  role_id uuid references public.labor_roles(id) on delete set null,
+  employee_id uuid references public.employees(id) on delete set null,
+  hours numeric not null,
+  total numeric not null,
+  created_at timestamp with time zone default now()
+);
+
 -- Enable Row Level Security
 alter table public.companies enable row level security;
 alter table public.units enable row level security;
@@ -282,6 +315,9 @@ alter table public.historico_os enable row level security;
 alter table public.profiles enable row level security;
 alter table public.clients enable row level security;
 alter table public.brazilian_cities enable row level security;
+alter table public.labor_roles enable row level security;
+alter table public.employee_roles enable row level security;
+alter table public.work_order_labor enable row level security;
 
 -- Policies
 create policy "Allow public read companies" on public.companies for select using (true);
@@ -394,6 +430,21 @@ create policy "Allow public insert brazilian_cities" on public.brazilian_cities 
 create policy "Allow public update brazilian_cities" on public.brazilian_cities for update using (true);
 create policy "Allow public delete brazilian_cities" on public.brazilian_cities for delete using (true);
 
+create policy "Allow public read labor_roles" on public.labor_roles for select using (true);
+create policy "Allow public insert labor_roles" on public.labor_roles for insert with check (true);
+create policy "Allow public update labor_roles" on public.labor_roles for update using (true);
+create policy "Allow public delete labor_roles" on public.labor_roles for delete using (true);
+
+create policy "Allow public read employee_roles" on public.employee_roles for select using (true);
+create policy "Allow public insert employee_roles" on public.employee_roles for insert with check (true);
+create policy "Allow public update employee_roles" on public.employee_roles for update using (true);
+create policy "Allow public delete employee_roles" on public.employee_roles for delete using (true);
+
+create policy "Allow public read work_order_labor" on public.work_order_labor for select using (true);
+create policy "Allow public insert work_order_labor" on public.work_order_labor for insert with check (true);
+create policy "Allow public update work_order_labor" on public.work_order_labor for update using (true);
+create policy "Allow public delete work_order_labor" on public.work_order_labor for delete using (true);
+
 insert into public.brazilian_cities (city_name, state, state_name, ibge_code) values
 ('São Paulo', 'SP', 'São Paulo', '3550308'),
 ('Rio de Janeiro', 'RJ', 'Rio de Janeiro', '3304557'),
@@ -405,4 +456,20 @@ insert into public.brazilian_cities (city_name, state, state_name, ibge_code) va
 ('Fortaleza', 'CE', 'Ceará', '2304400'),
 ('Manaus', 'AM', 'Amazonas', '1302603'),
 ('Recife', 'PE', 'Pernambuco', '2611606')
+on conflict do nothing;
+
+insert into public.labor_roles (name, code, hourly_rate, active) values
+('Elétrica', 'EL', 35.00, true),
+('Elétrica II', 'EL II', 55.00, true),
+('Mecânica', 'ME', 33.00, true),
+('Mecânica II', 'ME II', 53.00, true),
+('Instrumentação', 'IN', 40.00, true),
+('Instrumentação II', 'IN II', 60.00, true),
+('Automação', 'AU', 60.00, true),
+('Automação II', 'AU II', 80.00, true),
+('Transporte', 'TR', 45.00, true),
+('Administrativo', 'AD', 28.00, true),
+('Serviços Gerais', 'SG', 33.00, true),
+('Serviços Gerais II', 'SG II', 38.00, true),
+('Civil', 'CI', 45.00, true)
 on conflict do nothing;

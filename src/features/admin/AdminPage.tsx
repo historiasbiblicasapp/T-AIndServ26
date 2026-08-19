@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,9 +18,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Search, Edit, Trash2, Shield } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Shield, Wrench } from 'lucide-react'
 import { toast } from 'sonner'
 import { clearStorageModule } from '@/services/storage'
+import { getLaborRoles, createLaborRole, updateLaborRole, deleteLaborRole } from '@/services/storage'
 
 interface User {
   id: string
@@ -68,6 +69,61 @@ export default function AdminPage() {
   const [form, setForm] = useState<User>({ id: '', nome: '', email: '', perfil: 'tecnico', ativo: true, ultimoAcesso: '' })
   const [resetModule, setResetModule] = useState('')
   const [openResetDialog, setOpenResetDialog] = useState(false)
+  const [laborRoles, setLaborRoles] = useState<any[]>([])
+  const [openRoleDialog, setOpenRoleDialog] = useState(false)
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
+  const [roleForm, setRoleForm] = useState({ name: '', code: '', hourly_rate: 0, active: true })
+
+  useEffect(() => {
+    loadLaborRoles()
+  }, [])
+
+  const loadLaborRoles = async () => {
+    try {
+      const data = await getLaborRoles()
+      setLaborRoles(data as any[])
+    } catch {
+      // ignore
+    }
+  }
+
+  const resetRoleForm = () => {
+    setRoleForm({ name: '', code: '', hourly_rate: 0, active: true })
+    setEditingRoleId(null)
+  }
+
+  const handleRoleSubmit = async () => {
+    if (!roleForm.name || !roleForm.code || roleForm.hourly_rate <= 0) {
+      toast.error('Preencha todos os campos do cargo')
+      return
+    }
+
+    try {
+      if (editingRoleId) {
+        await updateLaborRole(editingRoleId, roleForm)
+        toast.success('Cargo atualizado')
+      } else {
+        await createLaborRole(roleForm)
+        toast.success('Cargo criado')
+      }
+      await loadLaborRoles()
+      setOpenRoleDialog(false)
+      resetRoleForm()
+    } catch {
+      toast.error('Erro ao salvar cargo')
+    }
+  }
+
+  const handleDeleteRole = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este cargo?')) return
+    try {
+      await deleteLaborRole(id)
+      await loadLaborRoles()
+      toast.success('Cargo removido')
+    } catch {
+      toast.error('Erro ao excluir cargo')
+    }
+  }
 
   const filtered = users.filter(user => {
     if (search && !user.nome.toLowerCase().includes(search.toLowerCase()) && !user.email.toLowerCase().includes(search.toLowerCase())) return false
@@ -289,6 +345,54 @@ export default function AdminPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-brand" />
+              <CardTitle>Cargos e Valores HH</CardTitle>
+            </div>
+            <Button onClick={() => { resetRoleForm(); setOpenRoleDialog(true) }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Cargo
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b">
+                <tr>
+                  <th className="py-2">Nome</th>
+                  <th className="py-2">Código</th>
+                  <th className="py-2 text-right">Valor HH</th>
+                  <th className="py-2 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {laborRoles.length === 0 ? (
+                  <tr><td colSpan={4} className="py-6 text-center text-gray-500">Nenhum cargo cadastrado</td></tr>
+                ) : (
+                  laborRoles.map(role => (
+                    <tr key={role.id} className="border-b last:border-0">
+                      <td className="py-2 font-medium">{role.name}</td>
+                      <td className="py-2">{role.code}</td>
+                      <td className="py-2 text-right">R$ {Number(role.hourly_rate).toFixed(2)}</td>
+                      <td className="py-2">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => { setRoleForm(role); setEditingRoleId(role.id); setOpenRoleDialog(true) }}><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteRole(role.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       <Dialog open={openResetDialog} onOpenChange={setOpenResetDialog}>
         <DialogContent>
           <DialogHeader>
@@ -320,6 +424,36 @@ export default function AdminPage() {
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => { setOpenResetDialog(false); setResetModule('') }}>Cancelar</Button>
             <Button variant="destructive" onClick={handleResetModule}>Resetar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openRoleDialog} onOpenChange={setOpenRoleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingRoleId ? 'Editar Cargo' : 'Novo Cargo'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input value={roleForm.name} onChange={e => setRoleForm({ ...roleForm, name: e.target.value })} placeholder="Ex: Elétrica" />
+            </div>
+            <div className="space-y-2">
+              <Label>Código</Label>
+              <Input value={roleForm.code} onChange={e => setRoleForm({ ...roleForm, code: e.target.value.toUpperCase() })} placeholder="Ex: EL" />
+            </div>
+            <div className="space-y-2">
+              <Label>Valor HH (R$)</Label>
+              <Input type="number" step="0.01" value={roleForm.hourly_rate} onChange={e => setRoleForm({ ...roleForm, hourly_rate: Number(e.target.value) })} />
+            </div>
+            <div className="flex items-center gap-2">
+              <input id="role-active" type="checkbox" checked={roleForm.active} onChange={e => setRoleForm({ ...roleForm, active: e.target.checked })} className="h-4 w-4 rounded border-gray-300" />
+              <Label htmlFor="role-active">Ativo</Label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setOpenRoleDialog(false)}>Cancelar</Button>
+            <Button onClick={handleRoleSubmit}>{editingRoleId ? 'Salvar' : 'Criar'}</Button>
           </div>
         </DialogContent>
       </Dialog>

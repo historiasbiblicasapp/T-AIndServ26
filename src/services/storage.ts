@@ -809,3 +809,184 @@ export function resetAllLocalData() {
     return false
   }
 }
+
+export async function getLaborRoles() {
+  try {
+    const { data, error } = await getSupabaseClient().from('labor_roles').select('*').order('name')
+    if (error) throw error
+    return data || []
+  } catch {
+    return getLocalData<any[]>('gmi_labor_roles', [])
+  }
+}
+
+export async function createLaborRole(role: any) {
+  try {
+    const { data, error } = await getSupabaseClient().from('labor_roles').insert(role).select().single()
+    if (error) throw error
+    return data
+  } catch {
+    const items = getLocalData<any[]>('gmi_labor_roles', [])
+    const newItem = { ...role, id: generateId() }
+    items.push(newItem)
+    setLocalData('gmi_labor_roles', items)
+    return newItem
+  }
+}
+
+export async function updateLaborRole(id: string, updates: any) {
+  try {
+    const { data, error } = await getSupabaseClient().from('labor_roles').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  } catch {
+    const items = getLocalData<any[]>('gmi_labor_roles', [])
+    const index = items.findIndex((item: any) => item.id === id)
+    if (index >= 0) {
+      items[index] = { ...items[index], ...updates }
+      setLocalData('gmi_labor_roles', items)
+      return items[index]
+    }
+    return null
+  }
+}
+
+export async function deleteLaborRole(id: string) {
+  try {
+    const { error } = await getSupabaseClient().from('labor_roles').delete().eq('id', id)
+    if (error) throw error
+  } catch {
+    const items = getLocalData<any[]>('gmi_labor_roles', [])
+    const filtered = items.filter((item: any) => item.id !== id)
+    setLocalData('gmi_labor_roles', filtered)
+  }
+}
+
+export async function getEmployeeRoles(employeeId?: string) {
+  try {
+    let query = getSupabaseClient().from('employee_roles').select('*, role:labor_roles(*)')
+    if (employeeId) query = query.eq('employee_id', employeeId)
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  } catch {
+    return getLocalData<any[]>('gmi_employee_roles', [])
+  }
+}
+
+export async function createEmployeeRole(role: any) {
+  try {
+    const { data, error } = await getSupabaseClient().from('employee_roles').insert(role).select().single()
+    if (error) throw error
+    return data
+  } catch {
+    const items = getLocalData<any[]>('gmi_employee_roles', [])
+    const newItem = { ...role, id: generateId() }
+    items.push(newItem)
+    setLocalData('gmi_employee_roles', items)
+    return newItem
+  }
+}
+
+export async function deleteEmployeeRole(id: string) {
+  try {
+    const { error } = await getSupabaseClient().from('employee_roles').delete().eq('id', id)
+    if (error) throw error
+  } catch {
+    const items = getLocalData<any[]>('gmi_employee_roles', [])
+    const filtered = items.filter((item: any) => item.id !== id)
+    setLocalData('gmi_employee_roles', filtered)
+  }
+}
+
+export async function getWorkOrderLabor(workOrderId: string) {
+  try {
+    const { data, error } = await getSupabaseClient().from('work_order_labor').select('*, role:labor_roles(*), employee:employees(*)').eq('work_order_id', workOrderId)
+    if (error) throw error
+    return data || []
+  } catch {
+    return getLocalData<any[]>(`gmi_work_order_labor_${workOrderId}`, [])
+  }
+}
+
+export async function createWorkOrderLabor(labor: any) {
+  try {
+    const { data, error } = await getSupabaseClient().from('work_order_labor').insert(labor).select().single()
+    if (error) throw error
+    return data
+  } catch {
+    const items = getLocalData<any[]>(`gmi_work_order_labor_${labor.work_order_id}`, [])
+    const newItem = { ...labor, id: generateId() }
+    items.push(newItem)
+    setLocalData(`gmi_work_order_labor_${labor.work_order_id}`, items)
+    return newItem
+  }
+}
+
+export async function updateWorkOrderLabor(id: string, updates: any) {
+  try {
+    const { data, error } = await getSupabaseClient().from('work_order_labor').update(updates).eq('id', id).select().single()
+    if (error) throw error
+    return data
+  } catch {
+    const keys = Object.keys(localStorage).filter(key => key.startsWith('gmi_work_order_labor_'))
+    for (const key of keys) {
+      const items = getLocalData<any[]>(key, [])
+      const index = items.findIndex((item: any) => item.id === id)
+      if (index >= 0) {
+        items[index] = { ...items[index], ...updates }
+        setLocalData(key, items)
+        return items[index]
+      }
+    }
+    return null
+  }
+}
+
+export async function deleteWorkOrderLabor(id: string, workOrderId: string) {
+  try {
+    const { error } = await getSupabaseClient().from('work_order_labor').delete().eq('id', id)
+    if (error) throw error
+  } catch {
+    const items = getLocalData<any[]>(`gmi_work_order_labor_${workOrderId}`, [])
+    const filtered = items.filter((item: any) => item.id !== id)
+    setLocalData(`gmi_work_order_labor_${workOrderId}`, filtered)
+  }
+}
+
+export async function getWorkOrderWithCalculations(id: string) {
+  try {
+    const wo = await getWorkOrderById(id)
+    if (!wo) return null
+
+    const [labor, recursos] = await Promise.all([
+      getWorkOrderLabor(id),
+      getRecursos(id),
+    ])
+
+    const recursosTotal = recursos.reduce((acc: number, item: any) => acc + Number(item.total || 0), 0)
+    const laborTotal = labor.reduce((acc: number, item: any) => acc + Number(item.total || 0), 0)
+    const displacement = Number(wo.displacement_value || 0)
+    const subtotal = recursosTotal + laborTotal + displacement
+    const taxRate = Number(wo.tax_rate || 0)
+    const tax = subtotal * (taxRate / 100)
+    const discount = Number(wo.discount || 0)
+    const total = subtotal + tax - discount
+
+    return {
+      ...wo,
+      labor,
+      recursos,
+      recursosTotal,
+      laborTotal,
+      displacement,
+      subtotal,
+      taxRate,
+      tax,
+      discount,
+      total,
+    }
+  } catch {
+    return null
+  }
+}
