@@ -320,7 +320,7 @@ export async function deleteEscopoItem(id: string, workOrderId: string) {
 
 export async function getRecursos(workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('recursos').select('*, part:parts(*)').eq('work_order_id', workOrderId)
+    const { data, error } = await getSupabaseClient().from('recursos').select('*').eq('work_order_id', workOrderId)
     if (error) throw error
     return data || []
   } catch {

@@ -127,6 +127,7 @@ export default function WorkOrdersPage() {
   const [taxRate, setTaxRate] = useState(0)
   const [discount, setDiscount] = useState(0)
   const [selectedScopeRole, setSelectedScopeRole] = useState('')
+  const [selectedLaborRole, setSelectedLaborRole] = useState('')
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     escopo: false,
@@ -218,16 +219,14 @@ export default function WorkOrdersPage() {
 
   const loadRelatedData = async (osId: string) => {
     try {
-      const [escopoData, recursosData, anexosData, assinaturasData, checklistData, historicoData, execucoesData, laborData] = await Promise.all([
-        getEscopoItems(osId),
-        getRecursos(osId),
-        getAnexos(osId),
-        getAssinaturas(osId),
-        getChecklistItens(undefined, osId),
-        getHistoricoOS(osId),
-        getExecucoes(osId),
-        getWorkOrderLabor(osId),
-      ])
+      const escopoData = await getEscopoItems(osId)
+      const recursosData = await getRecursos(osId)
+      const anexosData = await getAnexos(osId)
+      const assinaturasData = await getAssinaturas(osId)
+      const checklistData = await getChecklistItens(undefined, osId)
+      const historicoData = await getHistoricoOS(osId)
+      const execucoesData = await getExecucoes(osId)
+      const laborData = await getWorkOrderLabor(osId)
 
       setEscopo(escopoData)
       setRecursos(recursosData)
@@ -594,18 +593,8 @@ export default function WorkOrdersPage() {
                         <div className="grid grid-cols-12 gap-2 items-end">
                           <div className="col-span-5">
                             <Label>Cargo</Label>
-                            <Select onValueChange={async (roleId) => {
-                              if (!editingId || !roleId) return
-                              await createWorkOrderLabor({
-                                work_order_id: editingId,
-                                role_id: roleId,
-                                employee_id: null,
-                                hours: 0,
-                                total: 0,
-                              })
-                              await loadRelatedData(editingId)
-                            }}>
-                              <SelectTrigger>
+                            <Select value={selectedLaborRole} onValueChange={setSelectedLaborRole}>
+                              <SelectTrigger data-testid="labor-role">
                                 <SelectValue placeholder="Selecione um cargo" />
                               </SelectTrigger>
                               <SelectContent>
@@ -629,19 +618,19 @@ export default function WorkOrdersPage() {
                           </div>
                           <div className="col-span-1">
                             <Button className="w-full" onClick={async () => {
-                              const roleId = (document.querySelector('[data-testid="labor-role"]') as HTMLSelectElement)?.value
                               const hours = Number((document.getElementById('labor-hours') as HTMLInputElement)?.value || 0)
                               const people = Number((document.getElementById('labor-people') as HTMLInputElement)?.value || 0)
-                              if (!roleId || !editingId) return
-                              const role = laborRoles.find(r => r.id === roleId)
+                              if (!selectedLaborRole || !editingId) return
+                              const role = laborRoles.find(r => r.id === selectedLaborRole)
                               const total = hours * people * Number(role?.hourly_rate || 0)
                               await createWorkOrderLabor({
                                 work_order_id: editingId,
-                                role_id: roleId,
+                                role_id: selectedLaborRole,
                                 employee_id: null,
                                 hours,
                                 total,
                               })
+                              setSelectedLaborRole('')
                               await loadRelatedData(editingId)
                             }}>
                               <Plus className="h-4 w-4" />
