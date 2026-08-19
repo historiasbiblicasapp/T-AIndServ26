@@ -959,9 +959,10 @@ export async function getWorkOrderWithCalculations(id: string) {
     const wo = await getWorkOrderById(id)
     if (!wo) return null
 
-    const [labor, recursos] = await Promise.all([
+    const [labor, recursos, escopo] = await Promise.all([
       getWorkOrderLabor(id),
       getRecursos(id),
+      getEscopoItems(id),
     ])
 
     const recursosTotal = recursos.reduce((acc: number, item: any) => acc + Number(item.total || 0), 0)
@@ -977,6 +978,7 @@ export async function getWorkOrderWithCalculations(id: string) {
       ...wo,
       labor,
       recursos,
+      escopo,
       recursosTotal,
       laborTotal,
       displacement,

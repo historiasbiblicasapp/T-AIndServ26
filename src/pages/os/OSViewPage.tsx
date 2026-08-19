@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer, ChevronDown, ChevronUp } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
-import { getWorkOrderWithCalculations } from '@/services/storage'
+import { getWorkOrderWithCalculations, getAssinaturas, getLaborRoles } from '@/services/storage'
 import { useEffect, useState } from 'react'
 
 interface Recurso {
@@ -44,6 +44,7 @@ export default function OSViewPage() {
   const [recursos, setRecursos] = useState<Recurso[]>([])
   const [escopo, setEscopo] = useState<EscopoItem[]>([])
   const [laborItems, setLaborItems] = useState<LaborItem[]>([])
+  const [laborRoles, setLaborRoles] = useState<any[]>([])
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     executantes: true,
@@ -66,7 +67,10 @@ export default function OSViewPage() {
     const load = async () => {
       if (!id) return
       try {
-        const result = await getWorkOrderWithCalculations(id)
+        const [result, roles] = await Promise.all([
+          getWorkOrderWithCalculations(id),
+          getLaborRoles(),
+        ])
         if (!result) {
           setData(null)
           return
@@ -75,6 +79,7 @@ export default function OSViewPage() {
         setRecursos(result.recursos || [])
         setEscopo(result.escopo || [])
         setLaborItems(result.labor || [])
+        setLaborRoles(roles)
         setAssinaturas([])
       } catch {
         setData(null)
@@ -136,8 +141,8 @@ export default function OSViewPage() {
       <div className="mx-auto max-w-5xl overflow-y-auto p-4 print:mx-0">
         <div className="mb-6 flex items-center justify-between border-b pb-4">
           <div>
-            <h1 className="text-2xl font-bold">Ordem de Serviço</h1>
-            <p className="text-sm text-gray-500">{data.numero} • {data.dataAbertura}</p>
+            <h1 className="text-2xl font-bold">T&A Industrial Service</h1>
+            <p className="text-sm text-gray-500">Ordem de Serviço {data.numero} • {data.dataAbertura}</p>
           </div>
           <div className="text-right text-sm text-gray-500">
             <p>Status: {data.status}</p>
@@ -199,7 +204,7 @@ export default function OSViewPage() {
                   {laborItems.length > 0 ? (
                     laborItems.map((item: any) => (
                       <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-2">{item.role?.name || '—'}</td>
+                        <td className="py-2">{laborRoles.find(r => r.id === item.role_id)?.name || '—'}</td>
                         <td className="py-2">{item.employee?.full_name || '—'}</td>
                         <td className="py-2 text-center">{item.hours}</td>
                         <td className="py-2 text-right">R$ {Number(item.total).toFixed(2)}</td>
