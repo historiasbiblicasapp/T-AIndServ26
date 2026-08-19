@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer, ChevronDown, ChevronUp } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
-import { getWorkOrderWithCalculations, getAssinaturas, getLaborRoles } from '@/services/storage'
+import { getWorkOrderWithCalculations, getLaborRoles } from '@/services/storage'
 import { useEffect, useState } from 'react'
 
 interface Recurso {
