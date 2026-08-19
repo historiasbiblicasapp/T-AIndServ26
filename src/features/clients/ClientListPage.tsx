@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { getClients, createClient, updateClient, deleteClient, searchCep, getBrazilianCities } from '@/services/storage'
+import { getClients, createClient, updateClient, deleteClient, searchCep } from '@/services/storage'
 import { Plus, Search, Trash2, Edit, Loader2 } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
 
@@ -68,7 +68,6 @@ export default function ClientListPage() {
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loadingCep, setLoadingCep] = useState(false)
-  const [cities, setCities] = useState<{ city_name: string; state: string }[]>([])
   const [formData, setFormData] = useState({
     name: '',
     cnpj: '',
@@ -87,21 +86,18 @@ export default function ClientListPage() {
 
   useEffect(() => {
     loadClients()
-    loadCities()
   }, [])
 
-  const loadCities = async () => {
-    try {
-      const data = await getBrazilianCities()
-      setCities(data as any[])
-    } catch {
-      // ignore
-    }
+  const FALLBACK_CITIES_BY_STATE: Record<string, string[]> = {
+    SP: ['São Paulo', 'Guarulhos', 'Campinas', 'São Bernardo do Campo', 'São José dos Campos', 'Santo André', 'Ribeirão Preto', 'Osasco', 'Sorocaba', 'Mauá'],
+    RJ: ['Rio de Janeiro', 'São Gonçalo', 'Duque de Caxias', 'Nova Iguaçu', 'Niterói', 'Belford Roxo', 'Campos dos Goytacazes', 'São João de Meriti', 'Petrópolis', 'Volta Redonda'],
+    MG: ['Belo Horizonte', 'Uberlândia', 'Contagem', 'Juiz de Fora', 'Betim', 'Montes Claros', 'Uberaba', 'Governador Valadares', 'Ipatinga', 'Ouro Preto'],
+    ES: ['Vitória', 'Vila Velha', 'Serra', 'Cariacica', 'Cachoeiro de Itapemirim', 'Linhares', 'São Mateus', 'Colatina', 'Guarapari', 'Aracruz'],
   }
 
-  const filteredCityNames = cities
-    .filter((c) => c.state === formData.state)
-    .map((c) => c.city_name)
+  const filteredCityNames = formData.state && FALLBACK_CITIES_BY_STATE[formData.state]
+    ? FALLBACK_CITIES_BY_STATE[formData.state]
+    : []
 
   const loadClients = async () => {
     try {

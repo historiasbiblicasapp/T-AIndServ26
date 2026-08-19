@@ -28,6 +28,7 @@ interface InventoryItem {
   categoria: string
   quantidade: number
   unidade: string
+  valorUnitario: number
   local: string
   estoqueMinimo: number
   ultimaMovimentacao: string
@@ -44,9 +45,9 @@ interface Movement {
 }
 
 const INITIAL_ITEMS: InventoryItem[] = [
-  { id: '1', codigo: 'P001', nome: 'Rolamento 6205', categoria: 'Peças', quantidade: 45, unidade: 'UN', local: 'Almoxarifado A', estoqueMinimo: 10, ultimaMovimentacao: '2025-01-15' },
-  { id: '2', codigo: 'P002', nome: 'Filtro de óleo', categoria: 'Peças', quantidade: 8, unidade: 'UN', local: 'Almoxarifado A', estoqueMinimo: 15, ultimaMovimentacao: '2025-01-14' },
-  { id: '3', codigo: 'I001', nome: 'Óleo lubrificante ISO 68', categoria: 'Insumos', quantidade: 120, unidade: 'L', local: 'Almoxarifado B', estoqueMinimo: 50, ultimaMovimentacao: '2025-01-16' },
+  { id: '1', codigo: 'P001', nome: 'Rolamento 6205', categoria: 'Peças', quantidade: 45, unidade: 'UN', valorUnitario: 25.90, local: 'Almoxarifado A', estoqueMinimo: 10, ultimaMovimentacao: '2025-01-15' },
+  { id: '2', codigo: 'P002', nome: 'Filtro de óleo', categoria: 'Peças', quantidade: 8, unidade: 'UN', valorUnitario: 12.50, local: 'Almoxarifado A', estoqueMinimo: 15, ultimaMovimentacao: '2025-01-14' },
+  { id: '3', codigo: 'I001', nome: 'Óleo lubrificante ISO 68', categoria: 'Insumos', quantidade: 120, unidade: 'L', valorUnitario: 35.00, local: 'Almoxarifado B', estoqueMinimo: 50, ultimaMovimentacao: '2025-01-16' },
 ]
 
 const INITIAL_MOVEMENTS: Movement[] = [
@@ -62,7 +63,7 @@ export default function InventoryPage() {
   const [openItemDialog, setOpenItemDialog] = useState(false)
   const [openMovementDialog, setOpenMovementDialog] = useState(false)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
-  const [itemForm, setItemForm] = useState<InventoryItem>({ id: '', codigo: '', nome: '', categoria: '', quantidade: 0, unidade: 'UN', local: '', estoqueMinimo: 0, ultimaMovimentacao: '' })
+  const [itemForm, setItemForm] = useState<InventoryItem>({ id: '', codigo: '', nome: '', categoria: '', quantidade: 0, unidade: 'UN', valorUnitario: 0, local: '', estoqueMinimo: 0, ultimaMovimentacao: '' })
   const [movementForm, setMovementForm] = useState<Movement>({ id: '', itemId: '', tipo: 'Entrada', quantidade: 0, data: '', responsavel: '', observacao: '' })
 
   const filteredItems = items.filter(item => {
@@ -72,7 +73,7 @@ export default function InventoryPage() {
   })
 
   const resetItemForm = () => {
-    setItemForm({ id: '', codigo: '', nome: '', categoria: '', quantidade: 0, unidade: 'UN', local: '', estoqueMinimo: 0, ultimaMovimentacao: '' })
+    setItemForm({ id: '', codigo: '', nome: '', categoria: '', quantidade: 0, unidade: 'UN', valorUnitario: 0, local: '', estoqueMinimo: 0, ultimaMovimentacao: '' })
     setEditingItemId(null)
   }
 
@@ -245,6 +246,10 @@ export default function InventoryPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <Label>Valor Unitário (R$)</Label>
+                  <Input type="number" step="0.01" value={itemForm.valorUnitario} onChange={e => setItemForm({ ...itemForm, valorUnitario: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-2">
                   <Label>Local</Label>
                   <Input value={itemForm.local} onChange={e => setItemForm({ ...itemForm, local: e.target.value })} />
                 </div>
@@ -291,6 +296,7 @@ export default function InventoryPage() {
                   <th className="py-2">Categoria</th>
                   <th className="py-2">Qtd</th>
                   <th className="py-2">Un</th>
+                  <th className="py-2 text-right">Valor Unit.</th>
                   <th className="py-2">Local</th>
                   <th className="py-2">Mínimo</th>
                   <th className="py-2 text-right">Ações</th>
@@ -298,7 +304,7 @@ export default function InventoryPage() {
               </thead>
               <tbody>
                 {filteredItems.length === 0 ? (
-                  <tr><td colSpan={8} className="py-6 text-center text-gray-500">Nenhum item encontrado</td></tr>
+                  <tr><td colSpan={9} className="py-6 text-center text-gray-500">Nenhum item encontrado</td></tr>
                 ) : (
                   filteredItems.map(item => (
                     <tr key={item.id} className="border-b last:border-0">
@@ -309,6 +315,7 @@ export default function InventoryPage() {
                         <span className={item.quantidade <= item.estoqueMinimo ? 'font-bold text-red-600' : ''}>{item.quantidade}</span>
                       </td>
                       <td className="py-2">{item.unidade}</td>
+                      <td className="py-2 text-right">R$ {item.valorUnitario.toFixed(2)}</td>
                       <td className="py-2">{item.local}</td>
                       <td className="py-2">{item.estoqueMinimo}</td>
                       <td className="py-2">
