@@ -35,11 +35,11 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-white">
       {sidebarOpen && isMobile && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden print:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {!isMobile && (
-        <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
+        <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 print:hidden">
           <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">T&amp;A</div>
@@ -81,7 +81,7 @@ export default function AppLayout() {
       )}
 
       <div className={!isMobile ? 'lg:pl-64 min-h-screen flex flex-col' : 'min-h-screen flex flex-col'}>
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4 lg:px-6 print:hidden">
           <div className="flex items-center gap-4">
             {isMobile && (
               <button className="lg:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -142,7 +142,7 @@ export default function AppLayout() {
         </main>
 
         {isMobile && (
-          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white">
+          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white print:hidden">
             <div className="flex items-center justify-around">
               {bottomItems.map(item => (
                 <NavLink
