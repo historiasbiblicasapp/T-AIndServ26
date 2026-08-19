@@ -320,6 +320,14 @@ alter table public.employee_roles enable row level security;
 alter table public.work_order_labor enable row level security;
 
 -- Policies
+do $$ declare
+  r record;
+begin
+  for r in (select tablename, policyname from pg_policies where schemaname = 'public') loop
+    execute format('drop policy if exists %I on public.%I', r.policyname, r.tablename);
+  end loop;
+end $$;
+
 create policy "Allow public read companies" on public.companies for select using (true);
 create policy "Allow public insert companies" on public.companies for insert with check (true);
 create policy "Allow public update companies" on public.companies for update using (true);
