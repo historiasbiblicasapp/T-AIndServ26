@@ -641,7 +641,7 @@ export default function WorkOrdersPage() {
                           {laborItems.map((item: any) => (
                             <div key={item.id} className="flex items-center justify-between p-2 border rounded">
                               <div>
-                                <p className="text-sm font-medium">{item.role?.name || 'Sem cargo'} {item.employee?.full_name ? `• ${item.employee.full_name}` : ''}</p>
+                                <p className="text-sm font-medium">{laborRoles.find(r => r.id === item.role_id)?.name || 'Sem cargo'} {item.employee?.full_name ? `• ${item.employee.full_name}` : ''}</p>
                                 <p className="text-xs text-gray-500">{item.hours}h • R$ {Number(item.total).toFixed(2)}</p>
                               </div>
                               <Button variant="ghost" size="icon" onClick={async () => {
