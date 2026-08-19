@@ -162,6 +162,7 @@ create table if not exists public.escopo_servico (
   service text,
   people integer,
   hours text,
+  role_id uuid references public.labor_roles(id) on delete set null,
   created_at timestamp with time zone default now()
 );
 

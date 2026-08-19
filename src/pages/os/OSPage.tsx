@@ -75,6 +75,10 @@ interface OS {
   numeroEndereco: string
   telefone: string
   client_id?: string
+  displacement_type?: string
+  displacement_value?: number
+  tax_rate?: number
+  discount?: number
 }
 
 export default function WorkOrdersPage() {
@@ -122,6 +126,7 @@ export default function WorkOrdersPage() {
   const [displacementValue, setDisplacementValue] = useState(0)
   const [taxRate, setTaxRate] = useState(0)
   const [discount, setDiscount] = useState(0)
+  const [selectedScopeRole, setSelectedScopeRole] = useState('')
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     escopo: false,
@@ -171,6 +176,10 @@ export default function WorkOrdersPage() {
         numeroEndereco: item.numero_endereco || '',
         telefone: item.telefone || '',
         client_id: item.client_id || '',
+        displacement_type: item.displacement_type || 'none',
+        displacement_value: item.displacement_value || 0,
+        tax_rate: item.tax_rate || 0,
+        discount: item.discount || 0,
       }))
       setOsList(mapped)
     } catch (err: any) {
@@ -297,6 +306,10 @@ export default function WorkOrdersPage() {
     setForm(item)
     setEditingId(item.id)
     setOpenDialog(true)
+    setDisplacementType((item.displacement_type as 'none' | 'individual' | 'collective') || 'none')
+    setDisplacementValue(item.displacement_value || 0)
+    setTaxRate(item.tax_rate || 0)
+    setDiscount(item.discount || 0)
     await loadRelatedData(item.id)
   }
 
@@ -667,7 +680,17 @@ export default function WorkOrdersPage() {
                     </div>
                     {openSections.escopo && (
                       <div className="mt-2 space-y-2">
-                        <div className="grid gap-2" style={{ gridTemplateColumns: '2fr 1fr 1fr auto' }}>
+                        <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr auto' }}>
+                          <Select onValueChange={(value) => setSelectedScopeRole(value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Cargo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {laborRoles.map(role => (
+                                <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Input placeholder="Item" id="escopo-item" />
                           <Input placeholder="Pessoas" id="escopo-people" type="number" />
                           <Input placeholder="Horas" id="escopo-hours" />
@@ -682,7 +705,9 @@ export default function WorkOrdersPage() {
                               service,
                               people,
                               hours,
+                              role_id: selectedScopeRole,
                             })
+                            setSelectedScopeRole('')
                             await loadRelatedData(editingId)
                           }}>
                             <Plus className="h-4 w-4" />
@@ -693,7 +718,7 @@ export default function WorkOrdersPage() {
                             <div key={item.id} className="flex items-center justify-between p-2 border rounded">
                               <div>
                                 <p className="text-sm font-medium">{item.service}</p>
-                                <p className="text-xs text-gray-500">{item.people} pessoas • {item.hours}</p>
+                                <p className="text-xs text-gray-500">{item.role?.name || ''} • {item.people} pessoas • {item.hours}</p>
                               </div>
                               <Button variant="ghost" size="icon" onClick={async () => {
                                 if (editingId) {
