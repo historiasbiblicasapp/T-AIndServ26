@@ -1,5 +1,5 @@
 -- Migração idempotente e aditiva gerada a partir de supabase-schema.sql
--- Aplicável via Supabase SQL Editor (projeto rbkojlhvpqjfhyhonfcr).
+-- Aplicável via Supabase SQL Editor ou scripts/apply-migration.mjs (projeto cnawymsaozndrfbuysar).
 -- Não destrói dados: cria tabelas que faltam e adiciona colunas ausentes.
 -- As colunas são adicionadas sem NOT NULL/PRIMARY KEY para não falhar em tabelas populadas.
 

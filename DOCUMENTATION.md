@@ -194,8 +194,8 @@ src/
 ### 5.1 Arquivo `.env` (não commitado)
 
 ```env
-VITE_SUPABASE_URL=https://rbkojlhvpqjfhyhonfcr.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_URL=https://cnawymsaozndrfbuysar.supabase.co
+VITE_SUPABASE_ANON_KEY=<COLE_A_CHAVE_ANON_DO_PROJETO_cnawymsaozndrfbuysar>
 ```
 
 ### 5.2 Variáveis Obrigatórias
