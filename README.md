@@ -21,8 +21,8 @@ Sistema web + mobile para gestão de manutenção industrial. Inclui ordens de s
 Copie o `.env.example` para `.env` e configure:
 
 ```env
-VITE_SUPABASE_URL=https://cnawymsaozndrfbuysar.supabase.co
-VITE_SUPABASE_ANON_KEY=<COLE_A_CHAVE_ANON_DO_PROJETO_cnawymsaozndrfbuysar>
+VITE_SUPABASE_URL=https://rbkojlhvpqjfhyhonfcr.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJia29qbGh2cHFqZmh5aG9uZmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MzUwOTksImV4cCI6MjEwMDIxMTA5OX0.3GZhMJ741lXvLbn5FjVXAqijH_5eeuInlsKJSIuCAOo
 ```
 
 ### 2. Banco de Dados (Supabase)
@@ -43,7 +43,7 @@ supabase/bloco09_estoque.sql
 supabase/bloco10_equipes.sql
 ```
 
-Projeto: https://supabase.com/dashboard/project/cnawymsaozndrfbuysar
+Projeto: https://supabase.com/dashboard/project/rbkojlhvpqjfhyhonfcr
 
 ### 3. Instalar Dependências
 
