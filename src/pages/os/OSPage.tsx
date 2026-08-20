@@ -91,6 +91,7 @@ export default function WorkOrdersPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [equipments, setEquipments] = useState<{ id: string; name: string; code: string }[]>([])
   const [loadingCep, setLoadingCep] = useState(false)
+  const [cepNotFound, setCepNotFound] = useState(false)
   const [form, setForm] = useState<OS>({
     id: '',
     numero: '',
@@ -333,6 +334,7 @@ export default function WorkOrdersPage() {
 
   const handleCepChange = async (cep: string) => {
     setForm({ ...form, cep })
+    setCepNotFound(false)
     const cleanCep = cep.replace(/\D/g, '')
     if (cleanCep.length === 8) {
       setLoadingCep(true)
@@ -346,6 +348,8 @@ export default function WorkOrdersPage() {
             cidade: result.city,
             estado: result.state,
           }))
+        } else {
+          setCepNotFound(true)
         }
       } finally {
         setLoadingCep(false)
@@ -552,6 +556,7 @@ export default function WorkOrdersPage() {
                 <Label>CEP</Label>
                 <Input value={form.cep} onChange={(e) => handleCepChange(e.target.value)} placeholder="CEP" disabled={loadingCep} />
                 {loadingCep && <p className="text-xs text-gray-500">Buscando CEP...</p>}
+                {cepNotFound && !loadingCep && <p className="text-xs text-red-500">CEP não encontrado. Preencha o endereço manualmente.</p>}
               </div>
               <div className="space-y-2">
                 <Label>Endereço</Label>

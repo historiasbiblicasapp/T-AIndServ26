@@ -68,6 +68,7 @@ export default function ClientListPage() {
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loadingCep, setLoadingCep] = useState(false)
+  const [cepNotFound, setCepNotFound] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     cnpj: '',
@@ -174,6 +175,7 @@ export default function ClientListPage() {
 
   const handleCepBlur = async () => {
     const cep = formData.zip_code.replace(/\D/g, '')
+    setCepNotFound(false)
     if (cep.length !== 8) return
     setLoadingCep(true)
     try {
@@ -187,6 +189,8 @@ export default function ClientListPage() {
           state: data.state,
           zip_code: data.zip_code,
         }))
+      } else {
+        setCepNotFound(true)
       }
     } finally {
       setLoadingCep(false)
@@ -244,6 +248,7 @@ export default function ClientListPage() {
                     />
                     {loadingCep && <Loader2 className="absolute right-2 top-2 h-4 w-4 animate-spin text-muted-foreground" />}
                   </div>
+                  {cepNotFound && !loadingCep && <p className="text-xs text-red-500 mt-1">CEP não encontrado. Preencha o endereço manualmente.</p>}
                 </div>
                 <div>
                   <Label>Estado</Label>
