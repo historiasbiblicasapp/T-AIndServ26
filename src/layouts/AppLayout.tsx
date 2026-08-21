@@ -41,7 +41,10 @@ export default function AppLayout() {
       {!isMobile && (
         <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 print:hidden">
           <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200">
-            <div className="flex items-center gap-2">
+            <div
+              className="flex cursor-pointer items-center gap-2"
+              onClick={() => navigate('/')}
+            >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">T&amp;A</div>
               <span className="text-lg font-bold text-gray-900">T&A Industrial Service</span>
             </div>
@@ -98,8 +101,9 @@ export default function AppLayout() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="text-gray-700 hover:text-gray-900 hover:bg-gray-100" onClick={() => navigate('/')}>
+            <Button variant="ghost" className="gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100" onClick={() => navigate('/')}>
               <Home className="h-5 w-5" />
+              Dashboard
             </Button>
 
             <div className="relative">
