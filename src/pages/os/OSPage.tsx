@@ -796,7 +796,7 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Valores</span>
+                        <span className="text-sm font-medium">$ Valores</span>
                       </div>
                       {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>

@@ -242,10 +242,7 @@ export default function OSViewPage() {
 
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
             <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
-              <h2 className="mb-3 flex items-center gap-2 font-semibold">
-                <span className="text-base font-normal text-gray-400">R$</span>
-                Valores
-              </h2>
+              <h2 className="mb-3 font-semibold">Valores</h2>
             {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           {openSections.values && (
