@@ -20,6 +20,7 @@ import {
 import { Plus, Search, Eye, Edit, Trash2, ChevronDown, ChevronUp, FileText, Users, ListChecks, Package, Paperclip, PenLine, ClipboardList, History } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { CATEGORY_OPTIONS, categoriaFromType, typeFromCategoria } from '@/lib/os'
 import {
   getWorkOrders,
   createWorkOrder,
@@ -150,14 +151,7 @@ export default function WorkOrdersPage() {
         numero: item.number || `OS-${String(item.id).slice(-3)}`,
         titulo: item.title || '',
         equipamento: item.equipment_id || '',
-        categoria:
-          item.type === 'preventive'
-            ? 'Preventiva'
-            : item.type === 'corrective'
-              ? 'Corretiva'
-              : item.type === 'predictive'
-                ? 'Preditiva'
-                : 'Corretiva',
+        categoria: categoriaFromType(item.type),
         status:
           item.status === 'Aberta' ||
           item.status === 'Em Andamento' ||
@@ -363,7 +357,7 @@ export default function WorkOrdersPage() {
         number: form.numero,
         title: form.titulo,
         equipment_id: form.equipamento,
-        type: form.categoria === 'Preventiva' ? 'preventive' : form.categoria === 'Preditiva' ? 'predictive' : 'corrective',
+        type: typeFromCategoria(form.categoria),
         status: form.status,
         assigned_to: form.responsavel,
         planned_date: form.dataAbertura,
@@ -513,15 +507,15 @@ export default function WorkOrdersPage() {
                   <Label>Categoria</Label>
                   <Select
                     value={form.categoria}
-                    onValueChange={(value: 'Corretiva' | 'Preventiva' | 'Preditiva') => setForm({ ...form, categoria: value })}
+                    onValueChange={(value: string) => setForm({ ...form, categoria: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Corretiva">Corretiva</SelectItem>
-                      <SelectItem value="Preventiva">Preventiva</SelectItem>
-                      <SelectItem value="Preditiva">Preditiva</SelectItem>
+                      {CATEGORY_OPTIONS.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1080,9 +1074,9 @@ export default function WorkOrdersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="Corretiva">Corretiva</SelectItem>
-                  <SelectItem value="Preventiva">Preventiva</SelectItem>
-                  <SelectItem value="Preditiva">Preditiva</SelectItem>
+                  {CATEGORY_OPTIONS.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

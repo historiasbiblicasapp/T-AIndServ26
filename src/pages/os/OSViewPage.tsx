@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer, ChevronDown, ChevronUp } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
 import { getWorkOrderWithCalculations, getLaborRoles } from '@/services/storage'
+import { categoriaFromType } from '@/lib/os'
 import { useEffect, useState } from 'react'
 
 interface Recurso {
@@ -115,6 +116,7 @@ export default function OSViewPage() {
   const tax = subtotal * (taxRate / 100)
   const discount = Number(data?.discount || 0)
   const total = subtotal + tax - discount
+  const categoriaLabel = categoriaFromType(data?.type)
 
   return (
     <div className="min-h-screen bg-white print:min-h-0 print:p-0">
@@ -138,15 +140,28 @@ export default function OSViewPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl overflow-y-auto p-4 print:mx-0">
-        <div className="mb-6 flex items-center justify-between border-b pb-4">
+      <div className="os-print-header hidden print:block">
+        <div className="flex items-center justify-between border-b pb-2">
+          <div>
+            <h1 className="text-lg font-bold">T&A Industrial Service</h1>
+            <p className="text-sm">Ordem de Serviço – {data.numero} • {data.dataAbertura}</p>
+          </div>
+          <div className="text-right text-sm">
+            <p>Status: {data.status}</p>
+            <p>Categoria: {categoriaLabel}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-5xl overflow-y-auto p-4 print:mx-0 print:pt-24">
+        <div className="mb-6 flex items-center justify-between border-b pb-4 print:hidden">
           <div>
             <h1 className="text-2xl font-bold">T&A Industrial Service</h1>
-            <p className="text-sm text-gray-500">Ordem de Serviço {data.numero} • {data.dataAbertura}</p>
+            <p className="text-sm text-gray-500">Ordem de Serviço – {data.numero} • {data.dataAbertura}</p>
           </div>
           <div className="text-right text-sm text-gray-500">
             <p>Status: {data.status}</p>
-            <p>Categoria: {data.categoria}</p>
+            <p>Categoria: {categoriaLabel}</p>
           </div>
         </div>
 
@@ -247,7 +262,7 @@ export default function OSViewPage() {
                 <span>R$ {subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b py-1">
-                <span>Imposto ({taxRate}%)</span>
+                <span>Imposto</span>
                 <span>R$ {tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b py-1">

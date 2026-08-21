@@ -47,3 +47,15 @@
     border-color: #2563eb;
   }
 }
+
+@media print {
+  .os-print-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    padding: 0.25rem 1rem 0.5rem;
+    z-index: 50;
+  }
+}
