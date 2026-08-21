@@ -117,6 +117,7 @@ export default function OSViewPage() {
   const discount = Number(data?.discount || 0)
   const total = subtotal + tax - discount
   const categoriaLabel = categoriaFromType(data?.type)
+  const numero = data?.number || data?.numero || '—'
 
   return (
     <div className="min-h-screen bg-white print:min-h-0 print:p-0">
@@ -128,7 +129,7 @@ export default function OSViewPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">T&A</div>
           <div>
             <p className="font-semibold">Ordem de Serviço</p>
-            <p className="text-xs text-gray-500">{data.numero} • {data.dataAbertura}</p>
+            <p className="text-xs text-gray-500">{numero} • {data.dataAbertura}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -144,7 +145,7 @@ export default function OSViewPage() {
         <div className="flex items-center justify-between border-b pb-2">
           <div>
             <h1 className="text-lg font-bold">T&A Industrial Service</h1>
-            <p className="text-sm">Ordem de Serviço – {data.numero} • {data.dataAbertura}</p>
+            <p className="text-sm">Ordem de Serviço – {numero} • {data.dataAbertura}</p>
           </div>
           <div className="text-right text-sm">
             <p>Status: {data.status}</p>
@@ -157,7 +158,7 @@ export default function OSViewPage() {
         <div className="mb-6 flex items-center justify-between border-b pb-4 print:hidden">
           <div>
             <h1 className="text-2xl font-bold">T&A Industrial Service</h1>
-            <p className="text-sm text-gray-500">Ordem de Serviço – {data.numero} • {data.dataAbertura}</p>
+            <p className="text-sm text-gray-500">Ordem de Serviço – {numero} • {data.dataAbertura}</p>
           </div>
           <div className="text-right text-sm text-gray-500">
             <p>Status: {data.status}</p>
