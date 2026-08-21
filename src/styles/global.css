@@ -49,13 +49,22 @@
 }
 
 @media print {
-  .os-print-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: #fff;
-    padding: 0.25rem 1rem 0.5rem;
-    z-index: 50;
+  .os-print-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .os-print-table thead {
+    display: table-header-group;
+  }
+  .os-print-table thead td {
+    padding-bottom: 0;
+  }
+  .os-print-table td {
+    padding: 0;
+    vertical-align: top;
+  }
+  .print-break-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }

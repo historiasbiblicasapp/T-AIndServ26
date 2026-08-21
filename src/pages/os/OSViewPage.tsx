@@ -143,32 +143,29 @@ export default function OSViewPage() {
         </div>
       </div>
 
-      <div className="os-print-header hidden print:block">
-        <div className="flex items-center justify-between border-b pb-2">
-          <div>
-            <h1 className="text-lg font-bold">T&A Industrial Service</h1>
-            <p className="text-sm">Ordem de Serviço – {numero} • {data.dataAbertura}</p>
-          </div>
-          <div className="text-right text-sm">
-            <p>Status: {data.status}</p>
-            <p>Categoria: {categoriaLabel}</p>
-          </div>
-        </div>
-      </div>
+      <div className="mx-auto max-w-5xl p-4 print:mx-0 print:p-0">
+        <table className="w-full os-print-table">
+          <thead>
+            <tr>
+              <td>
+                <div className="mb-6 flex items-center justify-between border-b pb-4">
+                  <div>
+                    <h1 className="text-2xl font-bold">T&A Industrial Service</h1>
+                    <p className="text-sm text-gray-500">Ordem de Serviço – {numero} • {data.dataAbertura}</p>
+                  </div>
+                  <div className="text-right text-sm text-gray-500">
+                    <p>Status: {data.status}</p>
+                    <p>Categoria: {categoriaLabel}</p>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
 
-      <div className="mx-auto max-w-5xl overflow-y-auto p-4 print:mx-0 print:pt-24">
-        <div className="mb-6 flex items-center justify-between border-b pb-4 print:hidden">
-          <div>
-            <h1 className="text-2xl font-bold">T&A Industrial Service</h1>
-            <p className="text-sm text-gray-500">Ordem de Serviço – {numero} • {data.dataAbertura}</p>
-          </div>
-          <div className="text-right text-sm text-gray-500">
-            <p>Status: {data.status}</p>
-            <p>Categoria: {categoriaLabel}</p>
-          </div>
-        </div>
-
-        <div className="mb-6 rounded-lg border p-4">
+        <div className="mb-6 rounded-lg border p-4 print-break-avoid">
           <h2 className="mb-3 font-semibold">Cliente</h2>
           <div className="grid gap-2 sm:grid-cols-2">
             <div>
@@ -202,7 +199,7 @@ export default function OSViewPage() {
           </div>
         </div>
 
-        <div className="mb-6 rounded-lg border p-4">
+        <div className="mb-6 rounded-lg border p-4 print-break-avoid">
           <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('labor')}>
             <h2 className="mb-3 font-semibold">Mão de Obra</h2>
             {openSections.labor ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -243,7 +240,7 @@ export default function OSViewPage() {
           )}
         </div>
 
-        <div className="mb-6 rounded-lg border p-4">
+        <div className="mb-6 rounded-lg border p-4 print-break-avoid">
           <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
             <h2 className="mb-3 font-semibold">Valores</h2>
             {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -282,7 +279,7 @@ export default function OSViewPage() {
           )}
         </div>
 
-        <div className="mb-6 rounded-lg border p-4">
+        <div className="mb-6 rounded-lg border p-4 print-break-avoid">
           <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('escopo')}>
             <h2 className="mb-3 font-semibold">Escopo do Serviço</h2>
             {openSections.escopo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -321,7 +318,7 @@ export default function OSViewPage() {
           )}
         </div>
 
-        <div className="mb-6 rounded-lg border p-4">
+        <div className="mb-6 rounded-lg border p-4 print-break-avoid">
           <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
             <h2 className="mb-3 font-semibold">Recursos</h2>
             {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -364,7 +361,7 @@ export default function OSViewPage() {
           )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 print-break-avoid">
           <div className="rounded-lg border p-4">
             <p className="mb-8 text-sm font-medium">Assinatura Emitente</p>
             <p className="text-sm text-gray-500">{assinaturas.find(a => a.tipo === 'executante')?.nome || '_________________________'}</p>
@@ -374,6 +371,10 @@ export default function OSViewPage() {
             <p className="text-sm text-gray-500">{assinaturas.find(a => a.tipo === 'cliente')?.nome || '_________________________'}</p>
           </div>
         </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
       </div>
     </div>
   )
