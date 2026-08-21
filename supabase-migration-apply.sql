@@ -684,4 +684,6 @@ alter table public.work_order_labor add column if not exists role_id uuid refere
 alter table public.work_order_labor add column if not exists employee_id uuid references public.employees(id) on delete set null;
 alter table public.work_order_labor add column if not exists hours numeric;
 alter table public.work_order_labor add column if not exists total numeric;
-alter table public.work_order_labor add column if not exists created_at timestamp with time zone default now();
+ alter table public.work_order_labor add column if not exists created_at timestamp with time zone default now();
+ alter table public.work_order_labor add column if not exists quantity numeric;
+ alter table public.work_order_labor add column if not exists escopo_item integer;

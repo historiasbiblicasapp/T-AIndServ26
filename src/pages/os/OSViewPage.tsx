@@ -27,6 +27,8 @@ interface LaborItem {
   role?: { name: string; code: string; hourly_rate: number }
   employee?: { full_name: string }
   hours: number
+  quantity?: number
+  escopo_item?: number
   total: number
 }
 
@@ -210,8 +212,9 @@ export default function OSViewPage() {
               <table className="w-full text-left text-sm">
                 <thead className="border-b">
                   <tr>
+                    <th className="py-2 text-center">Item</th>
                     <th className="py-2">Cargo</th>
-                    <th className="py-2">Executante</th>
+                    <th className="py-2 text-center">Qtd.</th>
                     <th className="py-2 text-center">Horas</th>
                     <th className="py-2 text-right">Total</th>
                   </tr>
@@ -220,15 +223,16 @@ export default function OSViewPage() {
                   {laborItems.length > 0 ? (
                     laborItems.map((item: any) => (
                       <tr key={item.id} className="border-b last:border-0">
+                        <td className="py-2 text-center">{item.escopo_item ?? '—'}</td>
                         <td className="py-2">{laborRoles.find(r => r.id === item.role_id)?.name || '—'}</td>
-                        <td className="py-2">{item.employee?.full_name || '—'}</td>
-                        <td className="py-2 text-center">{item.hours}</td>
+                        <td className="py-2 text-center">{item.quantity ?? '—'}</td>
+                        <td className="py-2 text-center">{item.hours}h</td>
                         <td className="py-2 text-right">R$ {Number(item.total).toFixed(2)}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                      <td colSpan={5} className="py-4 text-center text-gray-500">
                         Nenhuma mão de obra cadastrada
                       </td>
                     </tr>

@@ -608,8 +608,8 @@ export default function WorkOrdersPage() {
                             <Input placeholder="Horas" id="labor-hours" type="number" />
                           </div>
                           <div className="col-span-2">
-                            <Label>Pessoas</Label>
-                            <Input placeholder="Pessoas" id="labor-people" type="number" />
+                            <Label>Qtd. Executantes</Label>
+                            <Input placeholder="Qtd." id="labor-people" type="number" />
                           </div>
                           <div className="col-span-2">
                             <Label>Item</Label>
@@ -619,14 +619,17 @@ export default function WorkOrdersPage() {
                             <Button className="w-full" onClick={async () => {
                               const hours = Number((document.getElementById('labor-hours') as HTMLInputElement)?.value || 0)
                               const people = Number((document.getElementById('labor-people') as HTMLInputElement)?.value || 0)
+                              const item = (document.getElementById('labor-item') as HTMLInputElement)?.value || ''
                               if (!selectedLaborRole || !editingId) return
                               const role = laborRoles.find(r => r.id === selectedLaborRole)
-                              const total = hours * people * Number(role?.hourly_rate || 0)
+                              const total = hours * Number(role?.hourly_rate || 0)
                               await createWorkOrderLabor({
                                 work_order_id: editingId,
                                 role_id: selectedLaborRole,
                                 employee_id: null,
                                 hours,
+                                quantity: people,
+                                escopo_item: item ? Number(item) : null,
                                 total,
                               })
                               setSelectedLaborRole('')
@@ -640,7 +643,7 @@ export default function WorkOrdersPage() {
                           {laborItems.map((item: any) => (
                             <div key={item.id} className="flex items-center justify-between p-2 border rounded">
                               <div>
-                                <p className="text-sm font-medium">{laborRoles.find(r => r.id === item.role_id)?.name || 'Sem cargo'} {item.employee?.full_name ? `• ${item.employee.full_name}` : ''}</p>
+                                <p className="text-sm font-medium">{laborRoles.find(r => r.id === item.role_id)?.name || 'Sem cargo'}{item.escopo_item ? ` • Item ${item.escopo_item}` : ''}{item.quantity ? ` • ${item.quantity} exec.` : ''}</p>
                                 <p className="text-xs text-gray-500">{item.hours}h • R$ {Number(item.total).toFixed(2)}</p>
                               </div>
                               <Button variant="ghost" size="icon" onClick={async () => {
