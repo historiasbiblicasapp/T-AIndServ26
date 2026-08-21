@@ -143,7 +143,7 @@ export default function OSViewPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl p-4 print:mx-0 print:p-0">
+      <div className="mx-auto max-w-5xl p-4 print:mx-0 print:max-w-none print:p-0">
         <table className="w-full os-print-table">
           <thead>
             <tr>
