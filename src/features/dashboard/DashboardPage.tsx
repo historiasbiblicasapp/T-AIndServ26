@@ -3,25 +3,126 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Wrench, ClipboardList, Users, Calendar, ArrowRight, AlertTriangle, Clock, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { getWorkOrders, getEquipments, getEmployees, getMaintenances, getClients } from '@/services/storage'
+
+interface DashboardStats {
+  ordensAbertas: number
+  equipamentos: number
+  colaboradores: number
+  manutencoes: number
+  totalOs: number
+  concluidas: number
+  emAndamento: number
+  clientes: number
+  backlog: number
+  preventivasAtrasadas: number
+  programadas: number
+  vencendo: number
+  proximas: number
+  vencidas: number
+}
+
+const EMPTY: DashboardStats = {
+  ordensAbertas: 0,
+  equipamentos: 0,
+  colaboradores: 0,
+  manutencoes: 0,
+  totalOs: 0,
+  concluidas: 0,
+  emAndamento: 0,
+  clientes: 0,
+  backlog: 0,
+  preventivasAtrasadas: 0,
+  programadas: 0,
+  vencendo: 0,
+  proximas: 0,
+  vencidas: 0,
+}
+
+function parseDate(value?: string): Date | null {
+  if (!value) return null
+  const d = new Date(value.split('T')[0])
+  return isNaN(d.getTime()) ? null : d
+}
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [stats, setStats] = useState<DashboardStats>(EMPTY)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [workOrders, equipments, employees, maintenances, clients] = await Promise.all([
+          getWorkOrders(),
+          getEquipments(),
+          getEmployees(),
+          getMaintenances(),
+          getClients(),
+        ])
+
+        const isConcluded = (s?: string) =>
+          s === 'Concluída' || s === 'concluida' || s === 'Concluded'
+        const isCancelled = (s?: string) =>
+          s === 'Cancelada' || s === 'cancelada' || s === 'Cancelled'
+        const open = workOrders.filter((o: any) => !isConcluded(o.status) && !isCancelled(o.status))
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const addDays = (n: number) => new Date(today.getTime() + n * 86400000)
+        const inRange = (d: Date | null, min: number, max: number) =>
+          d != null && d >= addDays(min) && d <= addDays(max)
+
+        const vencidas = maintenances.filter(
+          (m: any) => {
+            const d = parseDate(m.scheduled_date)
+            return d != null && d < today && m.status !== 'completed' && m.status !== 'done' && m.status !== 'concluida'
+          },
+        )
+        const vencendo = maintenances.filter((m: any) => inRange(parseDate(m.scheduled_date), 0, 7))
+        const proximas = maintenances.filter((m: any) => inRange(parseDate(m.scheduled_date), 8, 30))
+        const programadas = maintenances.filter((m: any) => m.status === 'scheduled' || m.status === 'agendada')
+
+        setStats({
+          ordensAbertas: open.length,
+          equipamentos: equipments.length,
+          colaboradores: employees.length,
+          manutencoes: maintenances.length,
+          totalOs: workOrders.length,
+          concluidas: workOrders.filter((o: any) => isConcluded(o.status)).length,
+          emAndamento: workOrders.filter(
+            (o: any) => o.status === 'Em Andamento' || o.status === 'em_andamento' || o.status === 'em execucao',
+          ).length,
+          clientes: clients.length,
+          backlog: open.length,
+          preventivasAtrasadas: vencidas.length,
+          programadas: programadas.length,
+          vencendo: vencendo.length,
+          proximas: proximas.length,
+          vencidas: vencidas.length,
+        })
+      } catch {
+        // keep zeros on error
+      }
+    }
+    load()
+  }, [])
 
   const kpis = [
-    { label: 'Ordens Abertas', value: '0', icon: ClipboardList, color: 'bg-brand/10 text-brand', link: '/work-orders' },
-    { label: 'Equipamentos', value: '0', icon: Wrench, color: 'bg-blue-50 text-brand', link: '/equipment' },
-    { label: 'Colaboradores', value: '0', icon: Users, color: 'bg-indigo-50 text-indigo-600', link: '/employees' },
-    { label: 'Manutenções', value: '0', icon: Calendar, color: 'bg-orange-50 text-orange-600', link: '/maintenance' },
+    { label: 'Ordens Abertas', value: String(stats.ordensAbertas), icon: ClipboardList, color: 'bg-brand/10 text-brand', link: '/work-orders' },
+    { label: 'Equipamentos', value: String(stats.equipamentos), icon: Wrench, color: 'bg-blue-50 text-brand', link: '/equipment' },
+    { label: 'Colaboradores', value: String(stats.colaboradores), icon: Users, color: 'bg-indigo-50 text-indigo-600', link: '/employees' },
+    { label: 'Manutenções', value: String(stats.manutencoes), icon: Calendar, color: 'bg-orange-50 text-orange-600', link: '/maintenance' },
   ]
 
   const indicators = [
-    { label: 'Disponibilidade', value: '0%', icon: TrendingUp, color: 'bg-blue-50 text-blue-700' },
-    { label: 'MTBF', value: '0h', icon: Clock, color: 'bg-brand/10 text-brand' },
-    { label: 'MTTR', value: '0h', icon: AlertTriangle, color: 'bg-yellow-50 text-yellow-700' },
-    { label: 'Backlog', value: '0', icon: ClipboardList, color: 'bg-red-50 text-red-700' },
-    { label: 'Preventivas Atrasadas', value: '0', icon: AlertTriangle, color: 'bg-red-50 text-red-700' },
-    { label: 'OEE', value: '0%', icon: TrendingUp, color: 'bg-blue-50 text-blue-700' },
+    { label: 'Total de OS', value: String(stats.totalOs), icon: ClipboardList, color: 'bg-brand/10 text-brand' },
+    { label: 'OS Concluídas', value: String(stats.concluidas), icon: TrendingUp, color: 'bg-blue-50 text-blue-700' },
+    { label: 'OS em Andamento', value: String(stats.emAndamento), icon: Clock, color: 'bg-brand/10 text-brand' },
+    { label: 'Clientes', value: String(stats.clientes), icon: Users, color: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Backlog', value: String(stats.backlog), icon: ClipboardList, color: 'bg-red-50 text-red-700' },
+    { label: 'Preventivas Atrasadas', value: String(stats.preventivasAtrasadas), icon: AlertTriangle, color: 'bg-red-50 text-red-700' },
   ]
 
   const quickActions = [
@@ -31,10 +132,10 @@ export default function DashboardPage() {
   ]
 
   const preventionAlerts = [
-    { label: 'Programadas', value: 0, color: 'text-brand' },
-    { label: 'Próximas', value: 0, color: 'text-yellow-700' },
-    { label: 'Vencendo', value: 0, color: 'text-orange-700' },
-    { label: 'Vencidas', value: 0, color: 'text-red-700' },
+    { label: 'Programadas', value: stats.programadas, color: 'text-brand' },
+    { label: 'Próximas', value: stats.proximas, color: 'text-yellow-700' },
+    { label: 'Vencendo', value: stats.vencendo, color: 'text-orange-700' },
+    { label: 'Vencidas', value: stats.vencidas, color: 'text-red-700' },
   ]
 
   return (
@@ -145,6 +246,10 @@ export default function DashboardPage() {
               <div className="flex justify-between">
                 <span className="text-gray-500">Perfil</span>
                 <span className="font-medium capitalize">{user?.role}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Clientes</span>
+                <span className="font-medium">{stats.clientes}</span>
               </div>
             </CardContent>
           </Card>
