@@ -209,7 +209,7 @@ export default function OSViewPage() {
               <table className="w-full text-left text-sm">
                 <thead className="border-b">
                   <tr>
-                    <th className="py-2 text-center">Item</th>
+                    <th className="py-2 text-left">Item</th>
                     <th className="py-2">Cargo</th>
                     <th className="py-2 text-center">Qtd.</th>
                     <th className="py-2 text-center">Horas</th>
@@ -220,7 +220,7 @@ export default function OSViewPage() {
                   {laborItems.length > 0 ? (
                     laborItems.map((item: any) => (
                       <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-2 text-center">{item.escopo_item ?? '—'}</td>
+                        <td className="py-2 text-left">{item.escopo_item ?? '—'}</td>
                         <td className="py-2">{laborRoles.find(r => r.id === item.role_id)?.name || '—'}</td>
                         <td className="py-2 text-center">{item.quantity ?? '—'}</td>
                         <td className="py-2 text-center">{item.hours}h</td>
