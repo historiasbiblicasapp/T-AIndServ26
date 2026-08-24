@@ -17,6 +17,7 @@ interface Recurso {
 
 interface EscopoItem {
   id: string
+  item_number?: number
   service: string
   people: number
   hours: string
@@ -49,6 +50,20 @@ export default function OSViewPage() {
   const [laborItems, setLaborItems] = useState<LaborItem[]>([])
   const [laborRoles, setLaborRoles] = useState<any[]>([])
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
+
+  const normalizeLaborItem = (item: any, scopeItems: any[] = []) => {
+    const matchingScopeItem = scopeItems.find((scopeItem: any) =>
+      Number(scopeItem.item_number ?? 0) === Number(item?.escopo_item ?? -1),
+    )
+
+    return {
+      ...item,
+      escopo_item: item?.escopo_item ?? matchingScopeItem?.item_number ?? null,
+      quantity: item?.quantity ?? matchingScopeItem?.people ?? null,
+      hours: item?.hours ?? matchingScopeItem?.hours ?? null,
+    }
+  }
+
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     executantes: true,
     escopo: true,
@@ -81,7 +96,7 @@ export default function OSViewPage() {
         setData(result)
         setRecursos(result.recursos || [])
         setEscopo(result.escopo || [])
-        setLaborItems(result.labor || [])
+        setLaborItems((result.labor || []).map((item: any) => normalizeLaborItem(item, result.escopo || [])))
         setLaborRoles(roles)
         setAssinaturas([])
       } catch {
@@ -218,15 +233,23 @@ export default function OSViewPage() {
                 </thead>
                 <tbody>
                   {laborItems.length > 0 ? (
-                    laborItems.map((item: any) => (
-                      <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-2 text-left">{item.escopo_item ?? '—'}</td>
-                        <td className="py-2">{laborRoles.find(r => r.id === item.role_id)?.name || '—'}</td>
-                        <td className="py-2 text-center">{item.quantity ?? '—'}</td>
-                        <td className="py-2 text-center">{item.hours}h</td>
-                        <td className="py-2 text-right">R$ {Number(item.total).toFixed(2)}</td>
-                      </tr>
-                    ))
+                    laborItems.map((item: any) => {
+                      const matchingScopeItem = escopo.find((scopeItem: any) =>
+                        Number(scopeItem.item_number ?? 0) === Number(item?.escopo_item ?? -1),
+                      )
+                      const displayedItem = item.escopo_item ?? matchingScopeItem?.item_number ?? '—'
+                      const displayedQuantity = item.quantity ?? matchingScopeItem?.people ?? '—'
+
+                      return (
+                        <tr key={item.id} className="border-b last:border-0">
+                          <td className="py-2 text-left">{displayedItem}</td>
+                          <td className="py-2">{laborRoles.find(r => r.id === item.role_id)?.name || '—'}</td>
+                          <td className="py-2 text-center">{displayedQuantity}</td>
+                          <td className="py-2 text-center">{item.hours || matchingScopeItem?.hours || '—'}h</td>
+                          <td className="py-2 text-right">R$ {Number(item.total).toFixed(2)}</td>
+                        </tr>
+                      )
+                    })
                   ) : (
                     <tr>
                       <td colSpan={5} className="py-4 text-center text-gray-500">

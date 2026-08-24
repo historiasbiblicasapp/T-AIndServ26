@@ -143,6 +143,19 @@ export default function WorkOrdersPage() {
     values: false,
   })
 
+  const normalizeLaborItem = (item: any, scopeItems: any[] = []) => {
+    const matchingScopeItem = scopeItems.find((scopeItem: any) =>
+      Number(scopeItem.item_number ?? 0) === Number(item?.escopo_item ?? -1),
+    )
+
+    return {
+      ...item,
+      escopo_item: item?.escopo_item ?? matchingScopeItem?.item_number ?? null,
+      quantity: item?.quantity ?? matchingScopeItem?.people ?? null,
+      hours: item?.hours ?? matchingScopeItem?.hours ?? null,
+    }
+  }
+
   const loadOS = async () => {
     try {
       const data = await getWorkOrders()
@@ -230,7 +243,7 @@ export default function WorkOrdersPage() {
       setChecklist(checklistData)
       setHistorico(historicoData)
       setExecucoes(execucoesData)
-      setLaborItems(laborData)
+      setLaborItems((laborData || []).map((item: any) => normalizeLaborItem(item, escopoData)))
     } catch {
       // ignore
     }
@@ -640,22 +653,34 @@ export default function WorkOrdersPage() {
                           </div>
                         </div>
                         <div className="space-y-1">
-                          {laborItems.map((item: any) => (
-                            <div key={item.id} className="flex items-center justify-between p-2 border rounded">
-                              <div>
-                                <p className="text-sm font-medium">{laborRoles.find(r => r.id === item.role_id)?.name || 'Sem cargo'}{item.escopo_item ? ` • Item ${item.escopo_item}` : ''}{item.quantity ? ` • ${item.quantity} exec.` : ''}</p>
-                                <p className="text-xs text-gray-500">{item.hours}h • R$ {Number(item.total).toFixed(2)}</p>
+                          {laborItems.map((item: any) => {
+                            const matchingScopeItem = escopo.find((scopeItem: any) =>
+                              Number(scopeItem.item_number ?? 0) === Number(item?.escopo_item ?? -1),
+                            )
+                            const displayedItem = item.escopo_item ?? matchingScopeItem?.item_number ?? '—'
+                            const displayedQuantity = item.quantity ?? matchingScopeItem?.people ?? '—'
+
+                            return (
+                              <div key={item.id} className="flex items-center justify-between p-2 border rounded">
+                                <div>
+                                  <p className="text-sm font-medium">{laborRoles.find(r => r.id === item.role_id)?.name || 'Sem cargo'}{displayedItem !== '—' ? ` • Item ${displayedItem}` : ''}{displayedQuantity !== '—' ? ` • ${displayedQuantity} exec.` : ''}</p>
+                                  <p className="text-xs text-gray-500">{item.hours || matchingScopeItem?.hours || '—'}h • R$ {Number(item.total).toFixed(2)}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={async () => {
+                                    if (editingId) {
+                                      await deleteWorkOrderLabor(item.id, editingId)
+                                      await loadRelatedData(editingId)
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
                               </div>
-                              <Button variant="ghost" size="icon" onClick={async () => {
-                                if (editingId) {
-                                  await deleteWorkOrderLabor(item.id, editingId)
-                                  await loadRelatedData(editingId)
-                                }
-                              }}>
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </div>
                     )}
