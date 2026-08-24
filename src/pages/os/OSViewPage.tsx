@@ -52,12 +52,24 @@ export default function OSViewPage() {
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
 
   const normalizeLaborItem = (item: any, scopeItems: any[] = []) => {
-    const matchingScopeItem = scopeItems.find((scopeItem: any) =>
-      Number(scopeItem.item_number ?? 0) === Number(item?.escopo_item ?? -1),
-    )
+    // Try to match the labor record to the escopo item. Some records reference
+    // the escopo by its numeric item_number, others by the escopo row id (UUID).
+    // Accept both forms to improve resilience.
+    const matchingScopeItem = scopeItems.find((scopeItem: any) => {
+      // match by numeric item_number
+      if (scopeItem.item_number != null && item?.escopo_item != null) {
+        if (Number(scopeItem.item_number) === Number(item.escopo_item)) return true
+      }
+      // match by escopo id (string)
+      if (scopeItem.id && item?.escopo_item) {
+        if (String(scopeItem.id) === String(item.escopo_item)) return true
+      }
+      return false
+    })
 
     return {
       ...item,
+      // prefer explicit escopo_item on the labor row; otherwise use matched scope's item_number
       escopo_item: item?.escopo_item ?? matchingScopeItem?.item_number ?? null,
       quantity: item?.quantity ?? matchingScopeItem?.people ?? null,
       hours: item?.hours ?? matchingScopeItem?.hours ?? null,
@@ -237,7 +249,9 @@ export default function OSViewPage() {
                       const matchingScopeItem = escopo.find((scopeItem: any) =>
                         Number(scopeItem.item_number ?? 0) === Number(item?.escopo_item ?? -1),
                       )
-                      const displayedItem = item.escopo_item ?? matchingScopeItem?.item_number ?? '—'
+                      const displayedItem = (matchingScopeItem && matchingScopeItem.item_number != null)
+                        ? matchingScopeItem.item_number
+                        : (item?.escopo_item != null && !isNaN(Number(item.escopo_item)) ? Number(item.escopo_item) : '—')
                       const displayedQuantity = item.quantity ?? matchingScopeItem?.people ?? '—'
 
                       return (

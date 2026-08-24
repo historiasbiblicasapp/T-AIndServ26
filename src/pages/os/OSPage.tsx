@@ -144,9 +144,18 @@ export default function WorkOrdersPage() {
   })
 
   const normalizeLaborItem = (item: any, scopeItems: any[] = []) => {
-    const matchingScopeItem = scopeItems.find((scopeItem: any) =>
-      Number(scopeItem.item_number ?? 0) === Number(item?.escopo_item ?? -1),
-    )
+    // Try to match the labor record to the escopo item. Support matching
+    // by numeric item_number or by escopo row id (UUID), since stored data
+    // can vary.
+    const matchingScopeItem = scopeItems.find((scopeItem: any) => {
+      if (scopeItem.item_number != null && item?.escopo_item != null) {
+        if (Number(scopeItem.item_number) === Number(item.escopo_item)) return true
+      }
+      if (scopeItem.id && item?.escopo_item) {
+        if (String(scopeItem.id) === String(item.escopo_item)) return true
+      }
+      return false
+    })
 
     return {
       ...item,
@@ -595,7 +604,7 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('labor')}>
                       <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 shrink-0" />
+                        <Users className="h-4 w-4 shrink-0 relative top-[1px]" />
                                                 <span className="text-sm font-medium leading-none">Mão de Obra</span>
                       </div>
                       {openSections.labor ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -657,7 +666,9 @@ export default function WorkOrdersPage() {
                             const matchingScopeItem = escopo.find((scopeItem: any) =>
                               Number(scopeItem.item_number ?? 0) === Number(item?.escopo_item ?? -1),
                             )
-                            const displayedItem = item.escopo_item ?? matchingScopeItem?.item_number ?? '—'
+                            const displayedItem = (matchingScopeItem && matchingScopeItem.item_number != null)
+                              ? matchingScopeItem.item_number
+                              : (item?.escopo_item != null && !isNaN(Number(item.escopo_item)) ? Number(item.escopo_item) : '—')
                             const displayedQuantity = item.quantity ?? matchingScopeItem?.people ?? '—'
 
                             return (
@@ -689,7 +700,7 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('escopo')}>
                       <div className="flex items-center gap-2">
-                        <ListChecks className="h-4 w-4 shrink-0" />
+                        <ListChecks className="h-4 w-4 shrink-0 relative top-[1px]" />
                                                 <span className="text-sm font-medium leading-none">Escopo</span>
                       </div>
                       {openSections.escopo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -754,7 +765,7 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
                       <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 shrink-0" />
+                        <Package className="h-4 w-4 shrink-0 relative top-[1px]" />
                                                 <span className="text-sm font-medium leading-none">Recursos</span>
                       </div>
                       {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -821,7 +832,7 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
                       <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
+                        <DollarSign className="h-4 w-4 shrink-0 relative top-[1px]" />
                         <span className="text-sm font-medium leading-none">Valores</span>
                       </div>
                       {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -860,7 +871,7 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('anexos')}>
                       <div className="flex items-center gap-2">
-                        <Paperclip className="h-4 w-4 shrink-0" />
+                        <Paperclip className="h-4 w-4 shrink-0 relative top-[1px]" />
                         <span className="text-sm font-medium leading-none">Anexos</span>
                       </div>
                       {openSections.anexos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
