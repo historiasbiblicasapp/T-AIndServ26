@@ -595,8 +595,8 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('labor')}>
                       <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span className="text-sm font-medium">Mão de Obra</span>
+                        <Users className="h-4 w-4 shrink-0" />
+                                                <span className="text-sm font-medium leading-none">Mão de Obra</span>
                       </div>
                       {openSections.labor ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
@@ -689,8 +689,8 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('escopo')}>
                       <div className="flex items-center gap-2">
-                        <ListChecks className="h-4 w-4" />
-                        <span className="text-sm font-medium">Escopo</span>
+                        <ListChecks className="h-4 w-4 shrink-0" />
+                                                <span className="text-sm font-medium leading-none">Escopo</span>
                       </div>
                       {openSections.escopo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
@@ -754,8 +754,8 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
                       <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        <span className="text-sm font-medium">Recursos</span>
+                        <Package className="h-4 w-4 shrink-0" />
+                                                <span className="text-sm font-medium leading-none">Recursos</span>
                       </div>
                       {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
@@ -822,7 +822,7 @@ export default function WorkOrdersPage() {
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4" />
-                        <span className="text-sm font-medium">Valores</span>
+                        <span className="text-sm font-medium leading-none">Valores</span>
                       </div>
                       {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
@@ -860,8 +860,8 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('anexos')}>
                       <div className="flex items-center gap-2">
-                        <Paperclip className="h-4 w-4" />
-                        <span className="text-sm font-medium">Anexos</span>
+                        <Paperclip className="h-4 w-4 shrink-0" />
+                        <span className="text-sm font-medium leading-none">Anexos</span>
                       </div>
                       {openSections.anexos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>

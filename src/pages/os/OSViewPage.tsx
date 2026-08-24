@@ -266,8 +266,8 @@ export default function OSViewPage() {
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
             <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
               <div className="mb-3 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                <h2 className="font-semibold">Valores</h2>
+                <DollarSign className="h-4 w-4 shrink-0" />
+                                <h2 className="font-semibold leading-none">Valores</h2>
               </div>
             {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
@@ -340,8 +340,8 @@ export default function OSViewPage() {
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
           <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
             <div className="mb-3 flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              <h2 className="font-semibold">Recursos</h2>
+              <Package className="h-4 w-4 shrink-0" />
+                            <h2 className="font-semibold leading-none">Recursos</h2>
             </div>
             {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
