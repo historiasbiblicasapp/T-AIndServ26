@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Search, Eye, Edit, Trash2, ChevronDown, ChevronUp, FileText, Users, ListChecks, Package, Paperclip, PenLine, ClipboardList, History } from 'lucide-react'
+import { Plus, Search, Eye, Edit, Trash2, ChevronDown, ChevronUp, FileText, Users, ListChecks, Package, Paperclip, PenLine, ClipboardList, History, DollarSign } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { CATEGORY_OPTIONS, categoriaFromType, typeFromCategoria } from '@/lib/os'
@@ -796,6 +796,7 @@ export default function WorkOrdersPage() {
                   <div className="border rounded-lg p-2">
                     <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
                       <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
                         <span className="text-sm font-medium">$ Valores</span>
                       </div>
                       {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

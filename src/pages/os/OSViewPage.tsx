@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Printer, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Printer, ChevronDown, ChevronUp, Package, DollarSign } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
 import { getWorkOrderWithCalculations, getLaborRoles } from '@/services/storage'
 import { categoriaFromType } from '@/lib/os'
@@ -242,39 +242,35 @@ export default function OSViewPage() {
 
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
             <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
-              <h2 className="mb-3 font-semibold">Valores</h2>
+              <div className="mb-3 flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <h2 className="font-semibold">Valores</h2>
+              </div>
             {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           {openSections.values && (
             <div className="mt-4 space-y-1 text-sm">
-              <div className="flex justify-between border-b py-1">
-                <span>Recursos</span>
-                <span>R$ {recursosTotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span>Mão de Obra</span>
-                <span>R$ {laborTotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span>Deslocamento</span>
-                <span>R$ {displacement.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-b py-1 font-semibold">
-                <span>Sub Total</span>
-                <span>R$ {subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span>Imposto</span>
-                <span>R$ {tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-b py-1">
-                <span>Desconto</span>
-                <span>R$ {discount.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-1 text-base font-bold">
-                <span>Valor Total</span>
-                <span>R$ {total.toFixed(2)}</span>
-              </div>
+              {[
+                { label: 'Recursos', value: recursosTotal },
+                { label: 'Mão de Obra', value: laborTotal },
+                { label: 'Deslocamento', value: displacement },
+                { label: 'Sub Total', value: subtotal, strong: true },
+                { label: 'Imposto', value: tax },
+                { label: 'Desconto', value: discount },
+                { label: 'Valor Total', value: total, total: true },
+              ].map((row) => (
+                <div
+                  key={row.label}
+                  className={[
+                    'grid grid-cols-[minmax(0,1fr)_140px] items-center border-b py-1 last:border-b-0',
+                    row.strong ? 'font-semibold' : '',
+                    row.total ? 'text-base font-bold' : '',
+                  ].join(' ')}
+                >
+                  <span className="pr-2">{row.label}</span>
+                  <span className="text-right tabular-nums">R$ {Number(row.value).toFixed(2)}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -320,7 +316,10 @@ export default function OSViewPage() {
 
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
           <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
-            <h2 className="mb-3 font-semibold">Recursos</h2>
+            <div className="mb-3 flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              <h2 className="font-semibold">Recursos</h2>
+            </div>
             {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           {openSections.recursos && (
