@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { getItem, setItem, removeItem } from '@/services/memoryStorage'
 
 interface User {
   id: string
@@ -22,12 +23,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem('taservind-user')
+    const stored = getItem('taservind-user')
     if (stored) {
       try {
         setUser(JSON.parse(stored))
       } catch {
-        localStorage.removeItem('taservind-user')
+        removeItem('taservind-user')
       }
     }
     setIsLoading(false)
@@ -38,13 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (email === 'admin@tindserv.com.br' && password === 'Admin@123') {
         const userData = { id: '1', email: 'admin@tindserv.com.br', full_name: 'Admin', role: 'admin' }
-        localStorage.setItem('taservind-user', JSON.stringify(userData))
+        setItem('taservind-user', JSON.stringify(userData))
         setUser(userData)
         toast.success('Login realizado com sucesso')
         return true
       } else if (email === 'admin@admin.com.br' && password === 'info2013') {
         const userData = { id: '2', email: 'admin@admin.com.br', full_name: 'Admin 2', role: 'admin' }
-        localStorage.setItem('taservind-user', JSON.stringify(userData))
+        setItem('taservind-user', JSON.stringify(userData))
         setUser(userData)
         toast.success('Login realizado com sucesso')
         return true
@@ -61,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = () => {
-    localStorage.removeItem('taservind-user')
+    removeItem('taservind-user')
     setUser(null)
     toast.success('Logout realizado')
   }

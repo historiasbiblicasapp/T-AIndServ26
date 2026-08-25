@@ -1,8 +1,9 @@
 import { getSupabaseClient } from './supabase'
+import { getItem, setItem, removeItem, keys as memKeys } from './memoryStorage'
 
 function getLocalData<T>(key: string, defaultValue: T): T {
   try {
-    const item = localStorage.getItem(key)
+    const item = getItem(key)
     return item ? JSON.parse(item) : defaultValue
   } catch {
     return defaultValue
@@ -10,7 +11,7 @@ function getLocalData<T>(key: string, defaultValue: T): T {
 }
 
 function setLocalData<T>(key: string, value: T) {
-  localStorage.setItem(key, JSON.stringify(value))
+  setItem(key, JSON.stringify(value))
 }
 
 function generateId(): string {
@@ -793,7 +794,7 @@ export async function searchCep(cep: string) {
 
 export function clearStorageModule(moduleKey: string) {
   try {
-    localStorage.removeItem(moduleKey)
+    removeItem(moduleKey)
     return true
   } catch {
     return false
@@ -802,8 +803,8 @@ export function clearStorageModule(moduleKey: string) {
 
 export function resetAllLocalData() {
   try {
-    const keys = Object.keys(localStorage).filter(key => key.startsWith('gmi_'))
-    keys.forEach(key => localStorage.removeItem(key))
+    const keys = memKeys().filter(key => key.startsWith('gmi_'))
+    keys.forEach(key => removeItem(key))
     return true
   } catch {
     return false
@@ -929,7 +930,7 @@ export async function updateWorkOrderLabor(id: string, updates: any) {
     if (error) throw error
     return data
   } catch {
-    const keys = Object.keys(localStorage).filter(key => key.startsWith('gmi_work_order_labor_'))
+    const keys = memKeys().filter(key => key.startsWith('gmi_work_order_labor_'))
     for (const key of keys) {
       const items = getLocalData<any[]>(key, [])
       const index = items.findIndex((item: any) => item.id === id)
