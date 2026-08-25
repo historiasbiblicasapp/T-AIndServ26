@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { getItem, setItem, removeItem } from '@/services/memoryStorage'
+import { getSupabaseClient } from '@/services/supabase'
 
 interface User {
   id: string
@@ -13,58 +13,88 @@ interface AuthContextType {
   user: User | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+function mapSupabaseUser(user: any): User | null {
+  if (!user) return null
+
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    full_name: user.user_metadata?.full_name ?? user.email ?? 'Usuário',
+    role: user.user_metadata?.role ?? 'user',
+  }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const stored = getItem('taservind-user')
-    if (stored) {
+    let mounted = true
+
+    const loadSession = async () => {
       try {
-        setUser(JSON.parse(stored))
-      } catch {
-        removeItem('taservind-user')
+        const { data: { session }, error } = await getSupabaseClient().auth.getSession()
+        if (error) throw error
+        if (mounted) {
+          setUser(session ? mapSupabaseUser(session.user) : null)
+        }
+      } catch (error) {
+        console.error('Erro ao carregar sessão do Supabase:', error)
+        if (mounted) setUser(null)
+      } finally {
+        if (mounted) setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    loadSession()
+
+    const { data: { subscription } } = getSupabaseClient().auth.onAuthStateChange((_event, session) => {
+      if (mounted) setUser(session ? mapSupabaseUser(session.user) : null)
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     try {
-      if (email === 'admin@tindserv.com.br' && password === 'Admin@123') {
-        const userData = { id: '1', email: 'admin@tindserv.com.br', full_name: 'Admin', role: 'admin' }
-        setItem('taservind-user', JSON.stringify(userData))
-        setUser(userData)
-        toast.success('Login realizado com sucesso')
-        return true
-      } else if (email === 'admin@admin.com.br' && password === 'info2013') {
-        const userData = { id: '2', email: 'admin@admin.com.br', full_name: 'Admin 2', role: 'admin' }
-        setItem('taservind-user', JSON.stringify(userData))
-        setUser(userData)
-        toast.success('Login realizado com sucesso')
-        return true
-      } else {
-        toast.error('Credenciais inválidas')
+      const { data, error } = await getSupabaseClient().auth.signInWithPassword({ email, password })
+      if (error) throw error
+
+      const userData = mapSupabaseUser(data.user)
+      if (!userData) {
+        toast.error('Não foi possível carregar o usuário autenticado')
         return false
       }
-    } catch {
-      toast.error('Erro ao fazer login')
+
+      setUser(userData)
+      toast.success('Login realizado com sucesso')
+      return true
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao fazer login')
       return false
     } finally {
       setIsLoading(false)
     }
   }
 
-  const logout = () => {
-    removeItem('taservind-user')
-    setUser(null)
-    toast.success('Logout realizado')
+  const logout = async () => {
+    try {
+      const { error } = await getSupabaseClient().auth.signOut()
+      if (error) throw error
+      setUser(null)
+      toast.success('Logout realizado')
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao sair')
+    }
   }
 
   return (

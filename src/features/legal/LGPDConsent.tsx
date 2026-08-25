@@ -1,24 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { getItem, setItem } from '@/services/memoryStorage'
 
 export default function LGPDConsent() {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const consent = getItem('lgpd-consent')
-    if (!consent) {
-      setVisible(true)
-    }
-  }, [])
+  const [visible, setVisible] = useState(true)
 
   const handleAccept = () => {
-    setItem('lgpd-consent', 'accepted')
     setVisible(false)
   }
 
   const handleReject = () => {
-    setItem('lgpd-consent', 'rejected')
     setVisible(false)
   }
 
