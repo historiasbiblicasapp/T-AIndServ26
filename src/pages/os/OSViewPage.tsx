@@ -90,7 +90,8 @@ export default function OSViewPage() {
     const matchedScope = resolveScopeMatch(laborItem)
     // Registros antigos podem não ter escopo_item/quantity preenchidos;
     // nesse caso deriva pela posição, igual à tabela de escopo (_idx + 1).
-    return laborItem.escopo_item ?? matchedScope?.item_number ?? (index + 1)
+    const itemNumber = laborItem.escopo_item ?? matchedScope?.item_number ?? (index + 1)
+    return itemNumber ? `${itemNumber}º` : '—'
   }
 
   const getLaborItemQuantity = (laborItem: any, index: number) => {
