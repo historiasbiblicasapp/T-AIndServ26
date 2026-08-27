@@ -412,12 +412,18 @@ export default function WorkOrdersPage() {
           await deleteWorkOrderLabor(existing.id, savedOrderId)
         }
         for (const item of laborItems) {
+          const scopeMatch = escopo.find((scopeItem: any) => scopeItem.id === selectedScopeItemId) || scopeFallbackItem || escopo[0] || null
+          const scopePeople = Number(scopeMatch?.people ?? item.quantity ?? 0)
+          const scopeItemNumber = scopeMatch?.item_number ?? item.escopo_item ?? null
+
           await createWorkOrderLabor({
             work_order_id: savedOrderId,
             role_id: item.role_id,
-            employee_id: item.employee_id,
-            hours: item.hours,
-            total: item.total,
+            employee_id: item.employee_id ?? null,
+            hours: Number(item.hours || 0),
+            quantity: scopePeople,
+            escopo_item: scopeItemNumber,
+            total: Number(item.total || 0),
           })
         }
       }
@@ -848,7 +854,7 @@ export default function WorkOrdersPage() {
                   <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
                     <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('values')}>
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-100 text-amber-700">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-700">
                           <DollarSign className="h-4 w-4" />
                         </div>
                         <span className="text-sm font-semibold text-slate-800">Valores</span>
