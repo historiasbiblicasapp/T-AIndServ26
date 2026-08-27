@@ -105,6 +105,9 @@ export default function AppLayout() {
               <Home className="h-5 w-5" />
               Dashboard
             </Button>
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/admin')}>
+              Cargos
+            </Button>
 
             <div className="relative">
               <Button

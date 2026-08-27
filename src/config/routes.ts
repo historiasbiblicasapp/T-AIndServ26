@@ -24,6 +24,7 @@ export const menuItems = [
   { to: '/reports', icon: BarChart3, label: 'Relatórios' },
   { to: '/ai', icon: Brain, label: 'Inteligência Artificial' },
   { to: '/admin', icon: Shield, label: 'Administração' },
+  { to: '/admin', icon: Wrench, label: 'Cargos' },
 ]
 
 export const bottomItems = [
@@ -34,4 +35,5 @@ export const bottomItems = [
   { to: '/maintenance', icon: Calendar, label: 'Manut.' },
   { to: '/ai', icon: Brain, label: 'IA' },
   { to: '/reports', icon: FileText, label: 'Relat.' },
+  { to: '/admin', icon: Shield, label: 'Admin' },
 ]

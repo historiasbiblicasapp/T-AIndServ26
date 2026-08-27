@@ -506,10 +506,39 @@ export async function searchCep(cep: string) {
   } catch (error) { throw error }
 }
 
+export const DEFAULT_LABOR_ROLES = [
+  { name: 'Mecânico', code: 'MEC', hourly_rate: 95, active: true },
+  { name: 'Eletricista', code: 'ELE', hourly_rate: 110, active: true },
+  { name: 'Soldador', code: 'SOL', hourly_rate: 100, active: true },
+  { name: 'Instrumentista', code: 'INS', hourly_rate: 120, active: true },
+  { name: 'Técnico de Manutenção', code: 'TM', hourly_rate: 105, active: true },
+  { name: 'Auxiliar de Manutenção', code: 'AUX', hourly_rate: 80, active: true },
+  { name: 'Supervisor de Manutenção', code: 'SUP', hourly_rate: 140, active: true },
+  { name: 'Analista de Manutenção', code: 'ANL', hourly_rate: 130, active: true },
+]
+
+export async function ensureDefaultLaborRoles() {
+  try {
+    const { data, error } = await getSupabaseClient().from('labor_roles').select('*')
+    if (error) throw error
+
+    if ((data || []).length > 0) return data || []
+
+    const { data: created, error: insertError } = await getSupabaseClient()
+      .from('labor_roles')
+      .insert(DEFAULT_LABOR_ROLES)
+      .select()
+
+    if (insertError) throw insertError
+    return created || []
+  } catch (error) { throw error }
+}
+
 export async function getLaborRoles() {
   try {
     const { data, error } = await getSupabaseClient().from('labor_roles').select('*').order('name')
     if (error) throw error
+    if ((data || []).length === 0) return await ensureDefaultLaborRoles()
     return data || []
   } catch (error) { throw error }
 }
