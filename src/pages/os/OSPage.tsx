@@ -131,8 +131,14 @@ export default function WorkOrdersPage() {
   const [selectedScopeRole, setSelectedScopeRole] = useState('')
   const [selectedLaborRole, setSelectedLaborRole] = useState('')
   const [selectedScopeItemId, setSelectedScopeItemId] = useState('')
+ 
+  const resolveScopeItem = (value?: string | number | null) => {
+    if (value === null || value === undefined || value === '') return null
+    const normalized = String(value)
+    return escopo.find((item: any) => String(item.id) === normalized || Number(item.item_number) === Number(value) || String(item.item_number) === normalized) || null
+  }
 
-  const selectedScopeItem = escopo.find((item: any) => item.id === selectedScopeItemId) || null
+  const selectedScopeItem = resolveScopeItem(selectedScopeItemId)
   const scopeFallbackItem = selectedScopeItem || escopo[0] || null
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -236,7 +242,12 @@ export default function WorkOrdersPage() {
       setExecucoes(execucoesData)
       setLaborItems(laborData)
 
-      if (escopoData.length > 0 && !selectedScopeItemId) {
+      const currentScopeValue = selectedScopeItemId || laborData[0]?.escopo_item || null
+      const matchingScopeItem = resolveScopeItem(currentScopeValue)
+
+      if (matchingScopeItem) {
+        setSelectedScopeItemId(matchingScopeItem.id)
+      } else if (escopoData.length > 0) {
         setSelectedScopeItemId(escopoData[0].id)
       }
     } catch {
@@ -604,7 +615,7 @@ export default function WorkOrdersPage() {
                   <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
                     <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('labor')}>
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand/10 text-brand">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
                           <BriefcaseBusiness className="h-4 w-4" />
                         </div>
                         <span className="text-sm font-semibold text-slate-800">Mão de Obra</span>
@@ -718,7 +729,7 @@ export default function WorkOrdersPage() {
                   <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
                     <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('escopo')}>
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-cyan-100 text-cyan-700">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-cyan-100 text-cyan-700">
                           <FolderOpen className="h-4 w-4" />
                         </div>
                         <span className="text-sm font-semibold text-slate-800">Escopo</span>
@@ -785,7 +796,7 @@ export default function WorkOrdersPage() {
                   <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
                     <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('recursos')}>
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-100 text-emerald-700">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700">
                           <Package className="h-4 w-4" />
                         </div>
                         <span className="text-sm font-semibold text-slate-800">Recursos</span>
