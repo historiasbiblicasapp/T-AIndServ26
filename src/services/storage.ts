@@ -1,27 +1,7 @@
 import { getSupabaseClient } from './supabase'
 
-function getLocalData<T>(key: string, defaultValue: T): T {
-  try {
-    const item = localStorage.getItem(key)
-    return item ? JSON.parse(item) : defaultValue
-  } catch {
-    return defaultValue
-  }
-}
-
-function setLocalData<T>(key: string, value: T) {
-  localStorage.setItem(key, JSON.stringify(value))
-}
-
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2)
-}
-
 function getNextNumber(_key: string, prefix: string): string {
-  const counter = getLocalData<number>(`gmi_counter_${prefix}`, 0)
-  const next = counter + 1
-  setLocalData(`gmi_counter_${prefix}`, next)
-  return `${prefix}${next.toString().padStart(6, '0')}`
+  return `${prefix}${Date.now().toString(36).toUpperCase()}`
 }
 
 export async function getCompanies() {
@@ -29,9 +9,7 @@ export async function getCompanies() {
     const { data, error } = await getSupabaseClient().from('companies').select('*').order('name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_companies', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createCompany(company: any) {
@@ -39,13 +17,7 @@ export async function createCompany(company: any) {
     const { data, error } = await getSupabaseClient().from('companies').insert(company).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_companies', [])
-    const newItem = { ...company, id: generateId() }
-    items.push(newItem)
-    setLocalData('gmi_companies', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function updateCompany(id: string, updates: any) {
@@ -53,16 +25,7 @@ export async function updateCompany(id: string, updates: any) {
     const { data, error } = await getSupabaseClient().from('companies').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_companies', [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData('gmi_companies', items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
 export async function getUnits(companyId?: string) {
@@ -72,9 +35,7 @@ export async function getUnits(companyId?: string) {
     const { data, error } = await query.order('name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_units', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createUnit(unit: any) {
@@ -82,13 +43,7 @@ export async function createUnit(unit: any) {
     const { data, error } = await getSupabaseClient().from('units').insert(unit).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_units', [])
-    const newItem = { ...unit, id: generateId() }
-    items.push(newItem)
-    setLocalData('gmi_units', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function getPlants(unitId?: string) {
@@ -98,9 +53,7 @@ export async function getPlants(unitId?: string) {
     const { data, error } = await query.order('name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_plants', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function getAreas(plantId?: string) {
@@ -110,9 +63,7 @@ export async function getAreas(plantId?: string) {
     const { data, error } = await query.order('name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_areas', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function getLocations(sectorId?: string) {
@@ -122,9 +73,7 @@ export async function getLocations(sectorId?: string) {
     const { data, error } = await query.order('name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_locations', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function getWorkOrders(filter?: any) {
@@ -149,9 +98,7 @@ export async function getWorkOrders(filter?: any) {
     const { data, error } = await query.order('created_at', { ascending: false })
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_work_orders', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function getWorkOrderById(id: string) {
@@ -159,10 +106,7 @@ export async function getWorkOrderById(id: string) {
     const { data, error } = await getSupabaseClient().from('work_orders').select('*').eq('id', id).single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_work_orders', [])
-    return items.find((item: any) => item.id === id)
-  }
+  } catch (error) { throw error }
 }
 
 export async function createWorkOrder(workOrder: any) {
@@ -173,13 +117,7 @@ export async function createWorkOrder(workOrder: any) {
     const { data, error } = await getSupabaseClient().from('work_orders').insert(workOrder).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_work_orders', [])
-    const newItem = { ...workOrder, id: generateId(), number: workOrder.number || `OS-${Date.now()}` }
-    items.push(newItem)
-    setLocalData('gmi_work_orders', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function updateWorkOrder(id: string, updates: any) {
@@ -187,36 +125,21 @@ export async function updateWorkOrder(id: string, updates: any) {
     const { data, error } = await getSupabaseClient().from('work_orders').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_work_orders', [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData('gmi_work_orders', items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
 export async function deleteWorkOrder(id: string) {
   try {
     await getSupabaseClient().from('work_orders').update({ deleted_at: new Date().toISOString() }).eq('id', id)
-  } catch {
-    const items = getLocalData<any[]>('gmi_work_orders', [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData('gmi_work_orders', filtered)
-  }
+  } catch (error) { throw error }
 }
 
-export async function getWorkOrderStatusHistory(workOrderId: string) {
+export async function getWorkOrderStatusHistory(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('work_order_status_history').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
+    const { data, error } = await getSupabaseClient().from('work_order_status_history').select('*').eq('work_order_id', _workOrderId).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_status_history_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createWorkOrderStatusHistory(history: any) {
@@ -224,23 +147,15 @@ export async function createWorkOrderStatusHistory(history: any) {
     const { data, error } = await getSupabaseClient().from('work_order_status_history').insert(history).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_status_history_${history.work_order_id}`, [])
-    const newItem = { ...history, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_status_history_${history.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function getWorkOrderExecutantes(workOrderId: string) {
+export async function getWorkOrderExecutantes(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('work_order_executantes').select('*, employee:employees(*)').eq('work_order_id', workOrderId)
+    const { data, error } = await getSupabaseClient().from('work_order_executantes').select('*, employee:employees(*)').eq('work_order_id', _workOrderId)
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_executantes_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createWorkOrderExecutante(executante: any) {
@@ -248,33 +163,21 @@ export async function createWorkOrderExecutante(executante: any) {
     const { data, error } = await getSupabaseClient().from('work_order_executantes').insert(executante).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_executantes_${executante.work_order_id}`, [])
-    const newItem = { ...executante, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_executantes_${executante.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function deleteWorkOrderExecutante(id: string, workOrderId: string) {
+export async function deleteWorkOrderExecutante(id: string, _workOrderId: string) {
   try {
     await getSupabaseClient().from('work_order_executantes').delete().eq('id', id)
-  } catch {
-    const items = getLocalData<any[]>(`gmi_executantes_${workOrderId}`, [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData(`gmi_executantes_${workOrderId}`, filtered)
-  }
+  } catch (error) { throw error }
 }
 
-export async function getEscopoItems(workOrderId: string) {
+export async function getEscopoItems(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('escopo_servico').select('*').eq('work_order_id', workOrderId).order('item_number')
+    const { data, error } = await getSupabaseClient().from('escopo_servico').select('*').eq('work_order_id', _workOrderId).order('item_number')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_escopo_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createEscopoItem(item: any) {
@@ -282,50 +185,29 @@ export async function createEscopoItem(item: any) {
     const { data, error } = await getSupabaseClient().from('escopo_servico').insert(item).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_escopo_${item.work_order_id}`, [])
-    const newItem = { ...item, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_escopo_${item.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function updateEscopoItem(id: string, updates: any, workOrderId: string) {
+export async function updateEscopoItem(id: string, updates: any, _workOrderId: string) {
   try {
     const { data, error } = await getSupabaseClient().from('escopo_servico').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_escopo_${workOrderId}`, [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData(`gmi_escopo_${workOrderId}`, items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
-export async function deleteEscopoItem(id: string, workOrderId: string) {
+export async function deleteEscopoItem(id: string, _workOrderId: string) {
   try {
     await getSupabaseClient().from('escopo_servico').delete().eq('id', id)
-  } catch {
-    const items = getLocalData<any[]>(`gmi_escopo_${workOrderId}`, [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData(`gmi_escopo_${workOrderId}`, filtered)
-  }
+  } catch (error) { throw error }
 }
 
-export async function getRecursos(workOrderId: string) {
+export async function getRecursos(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('recursos').select('*').eq('work_order_id', workOrderId)
+    const { data, error } = await getSupabaseClient().from('recursos').select('*').eq('work_order_id', _workOrderId)
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_recursos_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createRecurso(recurso: any) {
@@ -333,50 +215,29 @@ export async function createRecurso(recurso: any) {
     const { data, error } = await getSupabaseClient().from('recursos').insert(recurso).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_recursos_${recurso.work_order_id}`, [])
-    const newItem = { ...recurso, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_recursos_${recurso.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function updateRecurso(id: string, updates: any, workOrderId: string) {
+export async function updateRecurso(id: string, updates: any, _workOrderId: string) {
   try {
     const { data, error } = await getSupabaseClient().from('recursos').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_recursos_${workOrderId}`, [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData(`gmi_recursos_${workOrderId}`, items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
-export async function deleteRecurso(id: string, workOrderId: string) {
+export async function deleteRecurso(id: string, _workOrderId: string) {
   try {
     await getSupabaseClient().from('recursos').delete().eq('id', id)
-  } catch {
-    const items = getLocalData<any[]>(`gmi_recursos_${workOrderId}`, [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData(`gmi_recursos_${workOrderId}`, filtered)
-  }
+  } catch (error) { throw error }
 }
 
-export async function getExecucoes(workOrderId: string) {
+export async function getExecucoes(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('execucoes').select('*, user:profiles(*)').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
+    const { data, error } = await getSupabaseClient().from('execucoes').select('*, user:profiles(*)').eq('work_order_id', _workOrderId).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_execucoes_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createExecucao(execucao: any) {
@@ -384,23 +245,15 @@ export async function createExecucao(execucao: any) {
     const { data, error } = await getSupabaseClient().from('execucoes').insert(execucao).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_execucoes_${execucao.work_order_id}`, [])
-    const newItem = { ...execucao, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_execucoes_${execucao.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function getAnexos(workOrderId: string) {
+export async function getAnexos(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('anexos').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
+    const { data, error } = await getSupabaseClient().from('anexos').select('*').eq('work_order_id', _workOrderId).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_anexos_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createAnexo(anexo: any) {
@@ -408,33 +261,21 @@ export async function createAnexo(anexo: any) {
     const { data, error } = await getSupabaseClient().from('anexos').insert(anexo).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_anexos_${anexo.work_order_id}`, [])
-    const newItem = { ...anexo, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_anexos_${anexo.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function deleteAnexo(id: string, workOrderId: string) {
+export async function deleteAnexo(id: string, _workOrderId: string) {
   try {
     await getSupabaseClient().from('anexos').delete().eq('id', id)
-  } catch {
-    const items = getLocalData<any[]>(`gmi_anexos_${workOrderId}`, [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData(`gmi_anexos_${workOrderId}`, filtered)
-  }
+  } catch (error) { throw error }
 }
 
-export async function getAssinaturas(workOrderId: string) {
+export async function getAssinaturas(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('assinaturas').select('*, signer:profiles(*)').eq('work_order_id', workOrderId)
+    const { data, error } = await getSupabaseClient().from('assinaturas').select('*, signer:profiles(*)').eq('work_order_id', _workOrderId)
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_assinaturas_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createAssinatura(assinatura: any) {
@@ -442,26 +283,18 @@ export async function createAssinatura(assinatura: any) {
     const { data, error } = await getSupabaseClient().from('assinaturas').insert(assinatura).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_assinaturas_${assinatura.work_order_id}`, [])
-    const newItem = { ...assinatura, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_assinaturas_${assinatura.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function getChecklistItens(checklistId?: string, workOrderId?: string) {
+export async function getChecklistItens(checklistId?: string, _workOrderId?: string) {
   try {
     let query = getSupabaseClient().from('checklist_itens').select('*')
     if (checklistId) query = query.eq('checklist_id', checklistId)
-    if (workOrderId) query = query.eq('work_order_id', workOrderId)
+    if (_workOrderId) query = query.eq('work_order_id', _workOrderId)
     const { data, error } = await query.order('created_at')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_checklist_itens_${checklistId || workOrderId || 'all'}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createChecklistItem(item: any) {
@@ -469,41 +302,21 @@ export async function createChecklistItem(item: any) {
     const { data, error } = await getSupabaseClient().from('checklist_itens').insert(item).select().single()
     if (error) throw error
     return data
-  } catch {
-    const key = `gmi_checklist_itens_${item.checklist_id || item.work_order_id || 'all'}`
-    const items = getLocalData<any[]>(key, [])
-    const newItem = { ...item, id: generateId() }
-    items.push(newItem)
-    setLocalData(key, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function updateChecklistItem(id: string, updates: any, key: string) {
+export async function updateChecklistItem(id: string, updates: any, _key: string) {
   try {
     const { data, error } = await getSupabaseClient().from('checklist_itens').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_checklist_itens_${key}`, [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData(`gmi_checklist_itens_${key}`, items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
-export async function deleteChecklistItem(id: string, key: string) {
+export async function deleteChecklistItem(id: string, _key: string) {
   try {
     await getSupabaseClient().from('checklist_itens').delete().eq('id', id)
-  } catch {
-    const items = getLocalData<any[]>(`gmi_checklist_itens_${key}`, [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData(`gmi_checklist_itens_${key}`, filtered)
-  }
+  } catch (error) { throw error }
 }
 
 export async function createHistoricoOS(historico: any) {
@@ -511,23 +324,15 @@ export async function createHistoricoOS(historico: any) {
     const { data, error } = await getSupabaseClient().from('historico_os').insert(historico).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_historico_${historico.work_order_id}`, [])
-    const newItem = { ...historico, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_historico_${historico.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
-export async function getHistoricoOS(workOrderId: string) {
+export async function getHistoricoOS(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('historico_os').select('*').eq('work_order_id', workOrderId).order('created_at', { ascending: false })
+    const { data, error } = await getSupabaseClient().from('historico_os').select('*').eq('work_order_id', _workOrderId).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_historico_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function getEquipments(companyId?: string) {
@@ -537,9 +342,7 @@ export async function getEquipments(companyId?: string) {
     const { data, error } = await query.order('name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_equipments', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createEquipment(equipment: any) {
@@ -547,13 +350,7 @@ export async function createEquipment(equipment: any) {
     const { data, error } = await getSupabaseClient().from('equipments').insert(equipment).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_equipments', [])
-    const newItem = { ...equipment, id: generateId() }
-    items.push(newItem)
-    setLocalData('gmi_equipments', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function updateEquipment(id: string, updates: any) {
@@ -561,27 +358,14 @@ export async function updateEquipment(id: string, updates: any) {
     const { data, error } = await getSupabaseClient().from('equipments').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_equipments', [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData('gmi_equipments', items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
 export async function deleteEquipment(id: string) {
   try {
     const { error } = await getSupabaseClient().from('equipments').delete().eq('id', id)
     if (error) throw error
-  } catch {
-    const items = getLocalData<any[]>('gmi_equipments', [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData('gmi_equipments', filtered)
-  }
+  } catch (error) { throw error }
 }
 
 export async function getSectors(companyId?: string, areaId?: string) {
@@ -592,9 +376,7 @@ export async function getSectors(companyId?: string, areaId?: string) {
     const { data, error } = await query.order('name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_sectors', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function getEmployees(companyId?: string, sectorId?: string) {
@@ -605,9 +387,7 @@ export async function getEmployees(companyId?: string, sectorId?: string) {
     const { data, error } = await query.order('full_name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_employees', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createEmployee(employee: any) {
@@ -615,13 +395,7 @@ export async function createEmployee(employee: any) {
     const { data, error } = await getSupabaseClient().from('employees').insert(employee).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_employees', [])
-    const newItem = { ...employee, id: generateId() }
-    items.push(newItem)
-    setLocalData('gmi_employees', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function updateEmployee(id: string, updates: any) {
@@ -629,27 +403,14 @@ export async function updateEmployee(id: string, updates: any) {
     const { data, error } = await getSupabaseClient().from('employees').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_employees', [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData('gmi_employees', items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
 export async function deleteEmployee(id: string) {
   try {
     const { error } = await getSupabaseClient().from('employees').delete().eq('id', id)
     if (error) throw error
-  } catch {
-    const items = getLocalData<any[]>('gmi_employees', [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData('gmi_employees', filtered)
-  }
+  } catch (error) { throw error }
 }
 
 export async function getMaintenances(companyId?: string, equipmentId?: string) {
@@ -660,9 +421,7 @@ export async function getMaintenances(companyId?: string, equipmentId?: string) 
     const { data, error } = await query.order('next_execution')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_maintenances', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createMaintenance(maintenance: any) {
@@ -670,13 +429,7 @@ export async function createMaintenance(maintenance: any) {
     const { data, error } = await getSupabaseClient().from('preventive_maintenances').insert(maintenance).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_maintenances', [])
-    const newItem = { ...maintenance, id: generateId() }
-    items.push(newItem)
-    setLocalData('gmi_maintenances', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function updateMaintenance(id: string, updates: any) {
@@ -684,27 +437,14 @@ export async function updateMaintenance(id: string, updates: any) {
     const { data, error } = await getSupabaseClient().from('preventive_maintenances').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_maintenances', [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData('gmi_maintenances', items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
 export async function deleteMaintenance(id: string) {
   try {
     const { error } = await getSupabaseClient().from('preventive_maintenances').delete().eq('id', id)
     if (error) throw error
-  } catch {
-    const items = getLocalData<any[]>('gmi_maintenances', [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData('gmi_maintenances', filtered)
-  }
+  } catch (error) { throw error }
 }
 
 export async function getClients() {
@@ -712,9 +452,7 @@ export async function getClients() {
     const { data, error } = await getSupabaseClient().from('clients').select('*').order('name')
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_clients', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createClient(client: any) {
@@ -722,13 +460,7 @@ export async function createClient(client: any) {
     const { data, error } = await getSupabaseClient().from('clients').insert(client).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_clients', [])
-    const newItem = { ...client, id: generateId() }
-    items.push(newItem)
-    setLocalData('gmi_clients', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function updateClient(id: string, updates: any) {
@@ -736,27 +468,14 @@ export async function updateClient(id: string, updates: any) {
     const { data, error } = await getSupabaseClient().from('clients').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_clients', [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData('gmi_clients', items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
 export async function deleteClient(id: string) {
   try {
     const { error } = await getSupabaseClient().from('clients').delete().eq('id', id)
     if (error) throw error
-  } catch {
-    const items = getLocalData<any[]>('gmi_clients', [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData('gmi_clients', filtered)
-  }
+  } catch (error) { throw error }
 }
 
 export async function getBrazilianCities(state?: string) {
@@ -766,9 +485,7 @@ export async function getBrazilianCities(state?: string) {
     const { data, error } = await query
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_brazilian_cities', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function searchCep(cep: string) {
@@ -786,38 +503,44 @@ export async function searchCep(cep: string) {
       state: data.uf || '',
       zip_code: data.cep || cep,
     }
-  } catch {
-    return null
-  }
+  } catch (error) { throw error }
 }
 
-export function clearStorageModule(moduleKey: string) {
-  try {
-    localStorage.removeItem(moduleKey)
-    return true
-  } catch {
-    return false
-  }
-}
+export const DEFAULT_LABOR_ROLES = [
+  { name: 'Mecânico', code: 'MEC', hourly_rate: 95, active: true },
+  { name: 'Eletricista', code: 'ELE', hourly_rate: 110, active: true },
+  { name: 'Soldador', code: 'SOL', hourly_rate: 100, active: true },
+  { name: 'Instrumentista', code: 'INS', hourly_rate: 120, active: true },
+  { name: 'Técnico de Manutenção', code: 'TM', hourly_rate: 105, active: true },
+  { name: 'Auxiliar de Manutenção', code: 'AUX', hourly_rate: 80, active: true },
+  { name: 'Supervisor de Manutenção', code: 'SUP', hourly_rate: 140, active: true },
+  { name: 'Analista de Manutenção', code: 'ANL', hourly_rate: 130, active: true },
+]
 
-export function resetAllLocalData() {
+export async function ensureDefaultLaborRoles() {
   try {
-    const keys = Object.keys(localStorage).filter(key => key.startsWith('gmi_'))
-    keys.forEach(key => localStorage.removeItem(key))
-    return true
-  } catch {
-    return false
-  }
+    const { data, error } = await getSupabaseClient().from('labor_roles').select('*')
+    if (error) throw error
+
+    if ((data || []).length > 0) return data || []
+
+    const { data: created, error: insertError } = await getSupabaseClient()
+      .from('labor_roles')
+      .insert(DEFAULT_LABOR_ROLES)
+      .select()
+
+    if (insertError) throw insertError
+    return created || []
+  } catch (error) { throw error }
 }
 
 export async function getLaborRoles() {
   try {
     const { data, error } = await getSupabaseClient().from('labor_roles').select('*').order('name')
     if (error) throw error
+    if ((data || []).length === 0) return await ensureDefaultLaborRoles()
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_labor_roles', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createLaborRole(role: any) {
@@ -825,13 +548,7 @@ export async function createLaborRole(role: any) {
     const { data, error } = await getSupabaseClient().from('labor_roles').insert(role).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_labor_roles', [])
-    const newItem = { ...role, id: generateId() }
-    items.push(newItem)
-    setLocalData('gmi_labor_roles', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function updateLaborRole(id: string, updates: any) {
@@ -839,27 +556,14 @@ export async function updateLaborRole(id: string, updates: any) {
     const { data, error } = await getSupabaseClient().from('labor_roles').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_labor_roles', [])
-    const index = items.findIndex((item: any) => item.id === id)
-    if (index >= 0) {
-      items[index] = { ...items[index], ...updates }
-      setLocalData('gmi_labor_roles', items)
-      return items[index]
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
 export async function deleteLaborRole(id: string) {
   try {
     const { error } = await getSupabaseClient().from('labor_roles').delete().eq('id', id)
     if (error) throw error
-  } catch {
-    const items = getLocalData<any[]>('gmi_labor_roles', [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData('gmi_labor_roles', filtered)
-  }
+  } catch (error) { throw error }
 }
 
 export async function getEmployeeRoles(employeeId?: string) {
@@ -869,9 +573,7 @@ export async function getEmployeeRoles(employeeId?: string) {
     const { data, error } = await query
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>('gmi_employee_roles', [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createEmployeeRole(role: any) {
@@ -879,34 +581,22 @@ export async function createEmployeeRole(role: any) {
     const { data, error } = await getSupabaseClient().from('employee_roles').insert(role).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>('gmi_employee_roles', [])
-    const newItem = { ...role, id: generateId() }
-    items.push(newItem)
-    setLocalData('gmi_employee_roles', items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function deleteEmployeeRole(id: string) {
   try {
     const { error } = await getSupabaseClient().from('employee_roles').delete().eq('id', id)
     if (error) throw error
-  } catch {
-    const items = getLocalData<any[]>('gmi_employee_roles', [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData('gmi_employee_roles', filtered)
-  }
+  } catch (error) { throw error }
 }
 
-export async function getWorkOrderLabor(workOrderId: string) {
+export async function getWorkOrderLabor(_workOrderId: string) {
   try {
-    const { data, error } = await getSupabaseClient().from('work_order_labor').select('*, role:labor_roles(*), employee:employees(*)').eq('work_order_id', workOrderId)
+    const { data, error } = await getSupabaseClient().from('work_order_labor').select('*, role:labor_roles(*), employee:employees(*)').eq('work_order_id', _workOrderId)
     if (error) throw error
     return data || []
-  } catch {
-    return getLocalData<any[]>(`gmi_work_order_labor_${workOrderId}`, [])
-  }
+  } catch (error) { throw error }
 }
 
 export async function createWorkOrderLabor(labor: any) {
@@ -914,13 +604,7 @@ export async function createWorkOrderLabor(labor: any) {
     const { data, error } = await getSupabaseClient().from('work_order_labor').insert(labor).select().single()
     if (error) throw error
     return data
-  } catch {
-    const items = getLocalData<any[]>(`gmi_work_order_labor_${labor.work_order_id}`, [])
-    const newItem = { ...labor, id: generateId() }
-    items.push(newItem)
-    setLocalData(`gmi_work_order_labor_${labor.work_order_id}`, items)
-    return newItem
-  }
+  } catch (error) { throw error }
 }
 
 export async function updateWorkOrderLabor(id: string, updates: any) {
@@ -928,30 +612,14 @@ export async function updateWorkOrderLabor(id: string, updates: any) {
     const { data, error } = await getSupabaseClient().from('work_order_labor').update(updates).eq('id', id).select().single()
     if (error) throw error
     return data
-  } catch {
-    const keys = Object.keys(localStorage).filter(key => key.startsWith('gmi_work_order_labor_'))
-    for (const key of keys) {
-      const items = getLocalData<any[]>(key, [])
-      const index = items.findIndex((item: any) => item.id === id)
-      if (index >= 0) {
-        items[index] = { ...items[index], ...updates }
-        setLocalData(key, items)
-        return items[index]
-      }
-    }
-    return null
-  }
+  } catch (error) { throw error }
 }
 
-export async function deleteWorkOrderLabor(id: string, workOrderId: string) {
+export async function deleteWorkOrderLabor(id: string, _workOrderId: string) {
   try {
     const { error } = await getSupabaseClient().from('work_order_labor').delete().eq('id', id)
     if (error) throw error
-  } catch {
-    const items = getLocalData<any[]>(`gmi_work_order_labor_${workOrderId}`, [])
-    const filtered = items.filter((item: any) => item.id !== id)
-    setLocalData(`gmi_work_order_labor_${workOrderId}`, filtered)
-  }
+  } catch (error) { throw error }
 }
 
 export async function getWorkOrderWithCalculations(id: string) {
@@ -988,7 +656,5 @@ export async function getWorkOrderWithCalculations(id: string) {
       discount,
       total,
     }
-  } catch {
-    return null
-  }
+  } catch (error) { throw error }
 }

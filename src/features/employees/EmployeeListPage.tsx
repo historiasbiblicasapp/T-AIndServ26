@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, getLaborRoles } from '@/services/storage'
 import { Search, Plus, Trash2, Edit } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import DashboardButton from '@/components/shared/DashboardButton'
 import {
   Select,
@@ -32,6 +33,7 @@ interface LaborRole {
 }
 
 export default function EmployeeListPage() {
+  const navigate = useNavigate()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [laborRoles, setLaborRoles] = useState<LaborRole[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -136,16 +138,30 @@ export default function EmployeeListPage() {
                 </div>
                 <div>
                   <Label>Cargo</Label>
-                  <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um cargo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {laborRoles.map(role => (
-                        <SelectItem key={role.id} value={role.code}>{role.name} ({role.code})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {laborRoles.length === 0 ? (
+                    <div className="flex flex-col gap-2 rounded-md border border-dashed p-2">
+                      <p className="text-sm text-amber-700">Nenhum cargo cadastrado.</p>
+                      <Button type="button" variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                        Cadastrar cargo
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um cargo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {laborRoles.map(role => (
+                            <SelectItem key={role.id} value={role.code}>{role.name} ({role.code})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => navigate('/admin')}>
+                        Gerenciar cargos
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <Label>Departamento</Label>

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -18,9 +19,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Search, Edit, Trash2, Shield, Wrench } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Shield, Wrench, Users, BriefcaseBusiness } from 'lucide-react'
 import { toast } from 'sonner'
-import { clearStorageModule } from '@/services/storage'
 import { getLaborRoles, createLaborRole, updateLaborRole, deleteLaborRole } from '@/services/storage'
 
 interface User {
@@ -59,16 +59,21 @@ const PROFILE_COLORS: Record<string, string> = {
   visualizador: 'bg-gray-100 text-gray-800',
 }
 
+const STAT_CARD_STYLES = {
+  users: 'border-brand/20 bg-brand/5',
+  profiles: 'border-blue-200 bg-blue-50',
+  roles: 'border-indigo-200 bg-indigo-50',
+}
+
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>(INITIAL_USERS)
   const [roles] = useState<Role[]>(ROLES)
   const [search, setSearch] = useState('')
   const [profileFilter, setProfileFilter] = useState<string>('all')
+  const [roleSearch, setRoleSearch] = useState('')
   const [openDialog, setOpenDialog] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<User>({ id: '', nome: '', email: '', perfil: 'tecnico', ativo: true, ultimoAcesso: '' })
-  const [resetModule, setResetModule] = useState('')
-  const [openResetDialog, setOpenResetDialog] = useState(false)
   const [laborRoles, setLaborRoles] = useState<any[]>([])
   const [openRoleDialog, setOpenRoleDialog] = useState(false)
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
@@ -131,6 +136,12 @@ export default function AdminPage() {
     return true
   })
 
+  const filteredRoles = laborRoles.filter(role => {
+    if (!roleSearch) return true
+    const term = roleSearch.toLowerCase()
+    return (role.name || '').toLowerCase().includes(term) || (role.code || '').toLowerCase().includes(term)
+  })
+
   const resetForm = () => {
     setForm({ id: '', nome: '', email: '', perfil: 'tecnico', ativo: true, ultimoAcesso: '' })
     setEditingId(null)
@@ -165,28 +176,12 @@ export default function AdminPage() {
     toast.success('Status atualizado')
   }
 
-  const handleResetModule = () => {
-    if (!resetModule) {
-      toast.error('Selecione um módulo para resetar')
-      return
-    }
-
-    const success = clearStorageModule(resetModule)
-    if (success) {
-      toast.success(`Módulo ${resetModule} resetado com sucesso`)
-      setOpenResetDialog(false)
-      setResetModule('')
-    } else {
-      toast.error('Erro ao resetar módulo')
-    }
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Administração</h1>
-          <p className="mt-1 text-gray-600">Gerencie usuários e perfis de acesso.</p>
+          <p className="mt-1 text-gray-600">Gerencie usuários, permissões e cargos do sistema.</p>
         </div>
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
@@ -238,195 +233,198 @@ export default function AdminPage() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Usuários</CardTitle>
-            <div className="flex gap-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-8 sm:w-64" />
-              </div>
-              <Select value={profileFilter} onValueChange={setProfileFilter}>
-                <SelectTrigger className="sm:w-40">
-                  <SelectValue placeholder="Perfil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="supervisor">Supervisor</SelectItem>
-                  <SelectItem value="tecnico">Técnico</SelectItem>
-                  <SelectItem value="visualizador">Visualizador</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className={`rounded-xl border p-4 ${STAT_CARD_STYLES.users}`}>
+          <p className="text-sm text-gray-600">Usuários</p>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-2xl font-bold text-gray-900">{users.length}</span>
+            <Users className="h-8 w-8 text-brand" />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b">
-                <tr>
-                  <th className="py-2">Nome</th>
-                  <th className="py-2">Email</th>
-                  <th className="py-2">Perfil</th>
-                  <th className="py-2">Status</th>
-                  <th className="py-2">Último Acesso</th>
-                  <th className="py-2 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={6} className="py-6 text-center text-gray-500">Nenhum usuário encontrado</td></tr>
-                ) : (
-                  filtered.map(user => (
-                    <tr key={user.id} className="border-b last:border-0">
-                      <td className="py-2 font-medium">{user.nome}</td>
-                      <td className="py-2">{user.email}</td>
-                      <td className="py-2">
-                        <Badge variant="secondary" className={PROFILE_COLORS[user.perfil]}>{user.perfil}</Badge>
-                      </td>
-                      <td className="py-2">
-                        <Button variant="ghost" size="sm" onClick={() => toggleActive(user.id)}>
-                          {user.ativo ? 'Ativo' : 'Inativo'}
-                        </Button>
-                      </td>
-                      <td className="py-2">{user.ultimoAcesso}</td>
-                      <td className="py-2">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => { setForm(user); setEditingId(user.id); setOpenDialog(true); }}><Edit className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id)}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        </div>
+        <div className={`rounded-xl border p-4 ${STAT_CARD_STYLES.profiles}`}>
+          <p className="text-sm text-gray-600">Perfis</p>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-2xl font-bold text-gray-900">{roles.length}</span>
+            <Shield className="h-8 w-8 text-blue-600" />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className={`rounded-xl border p-4 ${STAT_CARD_STYLES.roles}`}>
+          <p className="text-sm text-gray-600">Cargos</p>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-2xl font-bold text-gray-900">{laborRoles.length}</span>
+            <BriefcaseBusiness className="h-8 w-8 text-indigo-600" />
+          </div>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-brand" />
-            <CardTitle>Perfis de Acesso</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {roles.map(role => (
-              <div key={role.id} className="rounded-lg border p-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold capitalize">{role.nome}</h3>
-                  <Badge variant="secondary">{role.permissoes.length}</Badge>
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="users" className="gap-2">
+            <Users className="h-4 w-4" />
+            Usuários
+          </TabsTrigger>
+          <TabsTrigger value="profiles" className="gap-2">
+            <Shield className="h-4 w-4" />
+            Perfis
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="gap-2">
+            <BriefcaseBusiness className="h-4 w-4" />
+            Cargos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle>Usuários</CardTitle>
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-8 sm:w-64" />
+                  </div>
+                  <Select value={profileFilter} onValueChange={setProfileFilter}>
+                    <SelectTrigger className="sm:w-40">
+                      <SelectValue placeholder="Perfil" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="tecnico">Técnico</SelectItem>
+                      <SelectItem value="visualizador">Visualizador</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <p className="mt-1 text-sm text-gray-500">{role.descricao}</p>
-                <p className="mt-2 text-xs text-gray-400">Permissões: {role.permissoes.join(', ')}</p>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-red-500" />
-            <CardTitle>Reset de Dados</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-sm text-gray-600">Zere cadastros específicos de módulos do sistema. Esta ação não pode ser desfeita.</p>
-          <Button variant="destructive" onClick={() => setOpenResetDialog(true)}>
-            Resetar Módulo
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-brand" />
-              <CardTitle>Cargos e Valores HH</CardTitle>
-            </div>
-            <Button onClick={() => { resetRoleForm(); setOpenRoleDialog(true) }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Cargo
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b">
-                <tr>
-                  <th className="py-2">Nome</th>
-                  <th className="py-2">Código</th>
-                  <th className="py-2 text-right">Valor HH</th>
-                  <th className="py-2 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {laborRoles.length === 0 ? (
-                  <tr><td colSpan={4} className="py-6 text-center text-gray-500">Nenhum cargo cadastrado</td></tr>
-                ) : (
-                  laborRoles.map(role => (
-                    <tr key={role.id} className="border-b last:border-0">
-                      <td className="py-2 font-medium">{role.name}</td>
-                      <td className="py-2">{role.code}</td>
-                      <td className="py-2 text-right">R$ {Number(role.hourly_rate).toFixed(2)}</td>
-                      <td className="py-2">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => { setRoleForm(role); setEditingRoleId(role.id); setOpenRoleDialog(true) }}><Edit className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteRole(role.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                        </div>
-                      </td>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="py-2">Nome</th>
+                      <th className="py-2">Email</th>
+                      <th className="py-2">Perfil</th>
+                      <th className="py-2">Status</th>
+                      <th className="py-2">Último Acesso</th>
+                      <th className="py-2 text-right">Ações</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 ? (
+                      <tr><td colSpan={6} className="py-6 text-center text-gray-500">Nenhum usuário encontrado</td></tr>
+                    ) : (
+                      filtered.map(user => (
+                        <tr key={user.id} className="border-b last:border-0">
+                          <td className="py-2 font-medium">{user.nome}</td>
+                          <td className="py-2">{user.email}</td>
+                          <td className="py-2">
+                            <Badge variant="secondary" className={PROFILE_COLORS[user.perfil]}>{user.perfil}</Badge>
+                          </td>
+                          <td className="py-2">
+                            <Button variant="ghost" size="sm" onClick={() => toggleActive(user.id)}>
+                              {user.ativo ? 'Ativo' : 'Inativo'}
+                            </Button>
+                          </td>
+                          <td className="py-2">{user.ultimoAcesso}</td>
+                          <td className="py-2">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" onClick={() => { setForm(user); setEditingId(user.id); setOpenDialog(true); }}><Edit className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <Dialog open={openResetDialog} onOpenChange={setOpenResetDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Resetar Módulo</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label>Selecione o módulo para resetar</Label>
-              <Select value={resetModule} onValueChange={setResetModule}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um módulo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gmi_work_orders">Ordens de Serviço</SelectItem>
-                  <SelectItem value="gmi_equipments">Equipamentos</SelectItem>
-                  <SelectItem value="gmi_employees">Colaboradores</SelectItem>
-                  <SelectItem value="gmi_maintenances">Manutenções</SelectItem>
-                  <SelectItem value="gmi_companies">Empresas</SelectItem>
-                  <SelectItem value="gmi_units">Unidades</SelectItem>
-                  <SelectItem value="gmi_plants">Plantas</SelectItem>
-                  <SelectItem value="gmi_areas">Áreas</SelectItem>
-                  <SelectItem value="gmi_sectors">Setores</SelectItem>
-                  <SelectItem value="gmi_locations">Locais</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-sm text-red-600">Atenção: esta ação irá remover todos os registros do módulo selecionado.</p>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => { setOpenResetDialog(false); setResetModule('') }}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleResetModule}>Resetar</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        <TabsContent value="profiles">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-brand" />
+                <CardTitle>Perfis de Acesso</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {roles.map(role => (
+                  <div key={role.id} className="rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold capitalize">{role.nome}</h3>
+                      <Badge variant="secondary">{role.permissoes.length}</Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">{role.descricao}</p>
+                    <p className="mt-2 text-xs text-gray-400">Permissões: {role.permissoes.join(', ')}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="roles">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5 text-brand" />
+                  <CardTitle>Cargos e Valores HH</CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input value={roleSearch} onChange={e => setRoleSearch(e.target.value)} placeholder="Buscar cargo..." className="pl-8 sm:w-56" />
+                  </div>
+                  <Button onClick={() => { resetRoleForm(); setOpenRoleDialog(true) }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Cargo
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="py-2">Nome</th>
+                      <th className="py-2">Código</th>
+                      <th className="py-2 text-right">Valor HH</th>
+                      <th className="py-2 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRoles.length === 0 ? (
+                      <tr><td colSpan={4} className="py-6 text-center text-gray-500">Nenhum cargo encontrado</td></tr>
+                    ) : (
+                      filteredRoles.map(role => (
+                        <tr key={role.id} className="border-b last:border-0">
+                          <td className="py-2 font-medium">{role.name}</td>
+                          <td className="py-2">{role.code}</td>
+                          <td className="py-2 text-right">R$ {Number(role.hourly_rate).toFixed(2)}</td>
+                          <td className="py-2">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => { setRoleForm(role); setEditingRoleId(role.id); setOpenRoleDialog(true) }}><Edit className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteRole(role.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={openRoleDialog} onOpenChange={setOpenRoleDialog}>
         <DialogContent>

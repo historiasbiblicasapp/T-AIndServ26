@@ -247,7 +247,7 @@ As rotas estão definidas em `src/config/routes.ts` e usadas tanto pelo `AppLayo
 ### 7.1 Estado Atual
 - **AuthContext** simula autenticação com contas hardcoded
 - **NÃO** há integração com Supabase Auth no momento
-- Tokens são armazenados em `localStorage`
+- Tokens e sessões são gerenciados pelo Supabase Auth e pela sessão do usuário no banco/auth do Supabase
 
 ### 7.2 Contas de Teste
 | Email | Senha | Perfil |

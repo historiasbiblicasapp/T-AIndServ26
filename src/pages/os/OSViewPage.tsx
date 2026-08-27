@@ -17,6 +17,7 @@ interface Recurso {
 
 interface EscopoItem {
   id: string
+  item_number?: number
   service: string
   people: number
   hours: string
@@ -64,6 +65,38 @@ export default function OSViewPage() {
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  const resolveScopeMatch = (laborItem: any) => {
+    if (!laborItem) return null
+
+    const possibleValues = [
+      laborItem.escopo_item,
+      laborItem.item_number,
+      laborItem.item_id,
+      laborItem.scope_item_id,
+    ]
+
+    for (const value of possibleValues) {
+      if (value === null || value === undefined || value === '') continue
+      const match = escopo.find((scopeItem: any) => String(scopeItem.id) === String(value) || Number(scopeItem.item_number) === Number(value))
+      if (match) return match
+    }
+
+    return null
+  }
+
+  const getLaborItemNumber = (laborItem: any, index: number) => {
+    const matchedScope = resolveScopeMatch(laborItem)
+    // Registros antigos podem não ter escopo_item/quantity preenchidos;
+    // nesse caso deriva pela posição, igual à tabela de escopo (_idx + 1).
+    const itemNumber = laborItem.escopo_item ?? matchedScope?.item_number ?? (index + 1)
+    return itemNumber ? `${itemNumber}º` : '—'
+  }
+
+  const getLaborItemQuantity = (laborItem: any, index: number) => {
+    const matchedScope = resolveScopeMatch(laborItem) ?? escopo[index] ?? null
+    return laborItem.quantity ?? matchedScope?.people ?? '—'
   }
 
   useEffect(() => {
@@ -200,8 +233,8 @@ export default function OSViewPage() {
         </div>
 
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
-          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('labor')}>
-            <h2 className="mb-3 font-semibold">Mão de Obra</h2>
+          <div className="mb-3 flex cursor-pointer items-center justify-between" onClick={() => toggleSection('labor')}>
+            <h2 className="font-semibold">Mão de Obra</h2>
             {openSections.labor ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           {openSections.labor && (
@@ -218,11 +251,11 @@ export default function OSViewPage() {
                 </thead>
                 <tbody>
                   {laborItems.length > 0 ? (
-                    laborItems.map((item: any) => (
+                    laborItems.map((item: any, idx: number) => (
                       <tr key={item.id} className="border-b last:border-0">
-                        <td className="py-2 text-left">{item.escopo_item ?? '—'}</td>
-                        <td className="py-2">{laborRoles.find(r => r.id === item.role_id)?.name || '—'}</td>
-                        <td className="py-2 text-center">{item.quantity ?? '—'}</td>
+                        <td className="py-2 text-left">{getLaborItemNumber(item, idx)}</td>
+                        <td className="py-2">{laborRoles.find(r => r.id === item.role_id)?.name || item.role?.name || '—'}</td>
+                        <td className="py-2 text-center">{getLaborItemQuantity(item, idx)}</td>
                         <td className="py-2 text-center">{item.hours}h</td>
                         <td className="py-2 text-right">R$ {Number(item.total).toFixed(2)}</td>
                       </tr>
@@ -241,8 +274,8 @@ export default function OSViewPage() {
         </div>
 
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
-            <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
-              <h2 className="mb-3 font-semibold">Valores</h2>
+          <div className="mb-3 flex cursor-pointer items-center justify-between" onClick={() => toggleSection('values')}>
+            <h2 className="font-semibold">Valores</h2>
             {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           {openSections.values && (
@@ -280,8 +313,8 @@ export default function OSViewPage() {
         </div>
 
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
-          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('escopo')}>
-            <h2 className="mb-3 font-semibold">Escopo do Serviço</h2>
+          <div className="mb-3 flex cursor-pointer items-center justify-between" onClick={() => toggleSection('escopo')}>
+            <h2 className="font-semibold">Escopo do Serviço</h2>
             {openSections.escopo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           {openSections.escopo && (
@@ -319,8 +352,8 @@ export default function OSViewPage() {
         </div>
 
         <div className="mb-6 rounded-lg border p-4 print-break-avoid">
-          <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
-            <h2 className="mb-3 font-semibold">Recursos</h2>
+          <div className="mb-3 flex cursor-pointer items-center justify-between" onClick={() => toggleSection('recursos')}>
+            <h2 className="font-semibold">Recursos</h2>
             {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
           {openSections.recursos && (

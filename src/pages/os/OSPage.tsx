@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Search, Eye, Edit, Trash2, ChevronDown, ChevronUp, FileText, Users, ListChecks, Package, Paperclip, PenLine, ClipboardList, History } from 'lucide-react'
+import { Plus, Search, Eye, Edit, Trash2, ChevronDown, ChevronUp, FileText, Package, Paperclip, PenLine, History, BriefcaseBusiness, FolderOpen, DollarSign, ClipboardCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { CATEGORY_OPTIONS, categoriaFromType, typeFromCategoria } from '@/lib/os'
@@ -130,6 +130,16 @@ export default function WorkOrdersPage() {
   const [discount, setDiscount] = useState(0)
   const [selectedScopeRole, setSelectedScopeRole] = useState('')
   const [selectedLaborRole, setSelectedLaborRole] = useState('')
+  const [selectedScopeItemId, setSelectedScopeItemId] = useState('')
+ 
+  const resolveScopeItem = (value?: string | number | null) => {
+    if (value === null || value === undefined || value === '') return null
+    const normalized = String(value)
+    return escopo.find((item: any) => String(item.id) === normalized || Number(item.item_number) === Number(value) || String(item.item_number) === normalized) || null
+  }
+
+  const selectedScopeItem = resolveScopeItem(selectedScopeItemId)
+  const scopeFallbackItem = selectedScopeItem || escopo[0] || null
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     escopo: false,
@@ -231,6 +241,15 @@ export default function WorkOrdersPage() {
       setHistorico(historicoData)
       setExecucoes(execucoesData)
       setLaborItems(laborData)
+
+      const currentScopeValue = selectedScopeItemId || laborData[0]?.escopo_item || null
+      const matchingScopeItem = resolveScopeItem(currentScopeValue)
+
+      if (matchingScopeItem) {
+        setSelectedScopeItemId(matchingScopeItem.id)
+      } else if (escopoData.length > 0) {
+        setSelectedScopeItemId(escopoData[0].id)
+      }
     } catch {
       // ignore
     }
@@ -248,6 +267,12 @@ export default function WorkOrdersPage() {
       loadRelatedData(editingId)
     }
   }, [editingId])
+
+  useEffect(() => {
+    if (escopo.length > 0 && !selectedScopeItemId) {
+      setSelectedScopeItemId(escopo[0].id)
+    }
+  }, [escopo, selectedScopeItemId])
 
   const filtered = osList.filter((item) => {
     if (search && !item.numero.toLowerCase().includes(search.toLowerCase()) && !item.titulo.toLowerCase().includes(search.toLowerCase())) return false
@@ -285,6 +310,7 @@ export default function WorkOrdersPage() {
     setHistorico([])
     setExecucoes([])
     setLaborItems([])
+    setSelectedScopeItemId('')
     setDisplacementType('none')
     setDisplacementValue(0)
     setTaxRate(0)
@@ -299,6 +325,7 @@ export default function WorkOrdersPage() {
   const openEdit = async (item: OS) => {
     setForm(item)
     setEditingId(item.id)
+    setSelectedScopeItemId('')
     setOpenDialog(true)
     setDisplacementType((item.displacement_type as 'none' | 'individual' | 'collective') || 'none')
     setDisplacementValue(item.displacement_value || 0)
@@ -396,12 +423,18 @@ export default function WorkOrdersPage() {
           await deleteWorkOrderLabor(existing.id, savedOrderId)
         }
         for (const item of laborItems) {
+          const scopeMatch = escopo.find((scopeItem: any) => scopeItem.id === selectedScopeItemId) || scopeFallbackItem || escopo[0] || null
+          const scopePeople = Number(scopeMatch?.people ?? item.quantity ?? 0)
+          const scopeItemNumber = scopeMatch?.item_number ?? item.escopo_item ?? null
+
           await createWorkOrderLabor({
             work_order_id: savedOrderId,
             role_id: item.role_id,
-            employee_id: item.employee_id,
-            hours: item.hours,
-            total: item.total,
+            employee_id: item.employee_id ?? null,
+            hours: Number(item.hours || 0),
+            quantity: scopePeople,
+            escopo_item: scopeItemNumber,
+            total: Number(item.total || 0),
           })
         }
       }
@@ -576,50 +609,81 @@ export default function WorkOrdersPage() {
               </div>
 
               {editingId && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 grid gap-3">
                   <Label>Itens da OS</Label>
-
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('labor')}>
+ 
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('labor')}>
                       <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span className="text-sm font-medium">Mão de Obra</span>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
+                          <BriefcaseBusiness className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Mão de Obra</span>
                       </div>
-                      {openSections.labor ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.labor ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.labor && (
-                      <div className="mt-2 space-y-2">
-                        <div className="grid grid-cols-12 gap-2 items-end">
-                          <div className="col-span-5">
+                      <div className="mt-3 space-y-3">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-12 xl:items-end">
+                          <div className="col-span-4">
                             <Label>Cargo</Label>
-                            <Select value={selectedLaborRole} onValueChange={setSelectedLaborRole}>
-                              <SelectTrigger data-testid="labor-role">
-                                <SelectValue placeholder="Selecione um cargo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {laborRoles.map(role => (
-                                  <SelectItem key={role.id} value={role.id}>{role.name} ({role.code}) - R$ {Number(role.hourly_rate).toFixed(2)}/h</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            {laborRoles.length === 0 ? (
+                              <div className="space-y-2 rounded-md border border-dashed p-2">
+                                <p className="text-sm text-amber-700">Nenhum cargo cadastrado.</p>
+                                <Button type="button" variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                                  Cadastrar cargo
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <Select value={selectedLaborRole} onValueChange={setSelectedLaborRole}>
+                                  <SelectTrigger data-testid="labor-role">
+                                    <SelectValue placeholder="Selecione um cargo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {laborRoles.map(role => (
+                                      <SelectItem key={role.id} value={role.id}>{role.name} ({role.code}) - R$ {Number(role.hourly_rate).toFixed(2)}/h</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => navigate('/admin')}>
+                                  Gerenciar cargos
+                                </Button>
+                              </div>
+                            )}
                           </div>
                           <div className="col-span-2">
                             <Label>Horas</Label>
                             <Input placeholder="Horas" id="labor-hours" type="number" />
                           </div>
                           <div className="col-span-2">
-                            <Label>Qtd. Executantes</Label>
-                            <Input placeholder="Qtd." id="labor-people" type="number" />
+                            <Label>Item</Label>
+                            <Input value={scopeFallbackItem?.item_number ? `${scopeFallbackItem.item_number}º` : ''} readOnly placeholder="Nº do escopo" />
                           </div>
                           <div className="col-span-2">
-                            <Label>Item</Label>
-                            <Input placeholder="Item" id="labor-item" />
+                            <Label>Qtd. Executantes</Label>
+                            <Input value={scopeFallbackItem?.people ?? ''} readOnly placeholder="Qtd." type="number" />
                           </div>
-                          <div className="col-span-1">
-                            <Button className="w-full" onClick={async () => {
+                          <div className="col-span-2">
+                            <Label>Escopo</Label>
+                            <Select value={selectedScopeItemId} onValueChange={setSelectedScopeItemId}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o escopo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {escopo.map((item: any) => (
+                                  <SelectItem key={item.id} value={item.id}>
+                                    {item.item_number ?? 1}º · {item.service} · {item.people} pessoas
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="col-span-12 flex justify-end">
+                            <Button className="w-full sm:w-auto" onClick={async () => {
                               const hours = Number((document.getElementById('labor-hours') as HTMLInputElement)?.value || 0)
-                              const people = Number((document.getElementById('labor-people') as HTMLInputElement)?.value || 0)
-                              const item = (document.getElementById('labor-item') as HTMLInputElement)?.value || ''
+                              const people = Number(scopeFallbackItem?.people ?? 0)
+                              const itemNumber = scopeFallbackItem?.item_number ?? null
                               if (!selectedLaborRole || !editingId) return
                               const role = laborRoles.find(r => r.id === selectedLaborRole)
                               const total = hours * Number(role?.hourly_rate || 0)
@@ -629,10 +693,11 @@ export default function WorkOrdersPage() {
                                 employee_id: null,
                                 hours,
                                 quantity: people,
-                                escopo_item: item ? Number(item) : null,
+                                escopo_item: itemNumber,
                                 total,
                               })
                               setSelectedLaborRole('')
+                              setSelectedScopeItemId(escopo[0]?.id || '')
                               await loadRelatedData(editingId)
                             }}>
                               <Plus className="h-4 w-4" />
@@ -661,17 +726,19 @@ export default function WorkOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('escopo')}>
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('escopo')}>
                       <div className="flex items-center gap-2">
-                        <ListChecks className="h-4 w-4" />
-                        <span className="text-sm font-medium">Escopo</span>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-cyan-100 text-cyan-700">
+                          <FolderOpen className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Escopo</span>
                       </div>
-                      {openSections.escopo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.escopo ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.escopo && (
-                      <div className="mt-2 space-y-2">
-                        <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr auto' }}>
+                      <div className="mt-3 space-y-3">
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_auto]">
                           <Select onValueChange={(value) => setSelectedScopeRole(value)}>
                             <SelectTrigger>
                               <SelectValue placeholder="Cargo" />
@@ -726,17 +793,19 @@ export default function WorkOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('recursos')}>
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('recursos')}>
                       <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        <span className="text-sm font-medium">Recursos</span>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700">
+                          <Package className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Recursos</span>
                       </div>
-                      {openSections.recursos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.recursos ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.recursos && (
-                      <div className="mt-2 space-y-2">
-                        <div className="grid grid-cols-12 gap-2">
+                      <div className="mt-3 space-y-3">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-12">
                           <div className="col-span-4">
                             <Input placeholder="Nome" id="recurso-nome" />
                           </div>
@@ -793,15 +862,18 @@ export default function WorkOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('values')}>
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('values')}>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">$ Valores</span>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-700">
+                          <DollarSign className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Valores</span>
                       </div>
-                      {openSections.values ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.values ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.values && (
-                      <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                      <div className="mt-3 grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Deslocamento</Label>
                           <Select value={displacementType} onValueChange={(value: 'none' | 'individual' | 'collective') => setDisplacementType(value)}>
@@ -831,16 +903,18 @@ export default function WorkOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('anexos')}>
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('anexos')}>
                       <div className="flex items-center gap-2">
-                        <Paperclip className="h-4 w-4" />
-                        <span className="text-sm font-medium">Anexos</span>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-100 text-violet-700">
+                          <Paperclip className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Anexos</span>
                       </div>
-                      {openSections.anexos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.anexos ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.anexos && (
-                      <div className="mt-2 space-y-2">
+                      <div className="mt-3 space-y-3">
                         <div className="flex gap-2">
                           <Input placeholder="URL do arquivo" id="anexo-url" />
                           <Button onClick={async () => {
@@ -879,16 +953,18 @@ export default function WorkOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('assinaturas')}>
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('assinaturas')}>
                       <div className="flex items-center gap-2">
-                        <PenLine className="h-4 w-4" />
-                        <span className="text-sm font-medium">Assinaturas</span>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-pink-100 text-pink-700">
+                          <PenLine className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Assinaturas</span>
                       </div>
-                      {openSections.assinaturas ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.assinaturas ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.assinaturas && (
-                      <div className="mt-2 space-y-2">
+                      <div className="mt-3 space-y-3">
                         <div className="flex gap-2">
                           <Select data-testid="assinatura-tipo">
                             <SelectTrigger className="w-full">
@@ -933,16 +1009,18 @@ export default function WorkOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('checklist')}>
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('checklist')}>
                       <div className="flex items-center gap-2">
-                        <ClipboardList className="h-4 w-4" />
-                        <span className="text-sm font-medium">Checklist</span>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-100 text-sky-700">
+                          <ClipboardCheck className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Checklist</span>
                       </div>
-                      {openSections.checklist ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.checklist ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.checklist && (
-                      <div className="mt-2 space-y-2">
+                      <div className="mt-3 space-y-3">
                         <div className="flex gap-2">
                           <Input placeholder="Novo item" id="checklist-text" className="flex-1" />
                           <Button onClick={async () => {
@@ -985,16 +1063,18 @@ export default function WorkOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('historico')}>
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('historico')}>
                       <div className="flex items-center gap-2">
-                        <History className="h-4 w-4" />
-                        <span className="text-sm font-medium">Histórico</span>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-100 text-zinc-700">
+                          <History className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Histórico</span>
                       </div>
-                      {openSections.historico ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.historico ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.historico && (
-                      <div className="mt-2 space-y-1">
+                      <div className="mt-3 space-y-1">
                         {historico.map((item: any) => (
                           <div key={item.id} className="text-sm border-b py-1 last:border-0">
                             <span className="font-medium">{item.action}</span> — {item.description}
@@ -1005,16 +1085,18 @@ export default function WorkOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border rounded-lg p-2">
-                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSection('execucoes')}>
+                  <div className="h-full rounded-lg border border-slate-200 bg-slate-50/70 p-3 shadow-sm">
+                    <div className="flex h-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-2 py-2" onClick={() => toggleSection('execucoes')}>
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span className="text-sm font-medium">Execuções</span>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-rose-100 text-rose-700">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">Execuções</span>
                       </div>
-                      {openSections.execucoes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {openSections.execucoes ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                     </div>
                     {openSections.execucoes && (
-                      <div className="mt-2 space-y-2">
+                      <div className="mt-3 space-y-3">
                         <Button onClick={async () => {
                           if (!editingId) return
                           await createExecucao({
