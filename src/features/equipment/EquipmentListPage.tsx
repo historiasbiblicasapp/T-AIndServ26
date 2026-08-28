@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { getEquipments, createEquipment, updateEquipment, deleteEquipment } from '@/services/storage'
+import { getEquipments, createEquipment, updateEquipment, deleteEquipment, getSectors } from '@/services/storage'
 import { Plus, Search, Trash2, Edit } from 'lucide-react'
 import DashboardButton from '@/components/shared/DashboardButton'
 
@@ -12,19 +12,37 @@ interface Equipment {
   id: string
   name: string
   code: string
+  category: string
   sector: string
+  sector_id: string | null
   status: string
 }
 
+interface Sector {
+  id: string
+  name: string
+}
+
+const CATEGORY_OPTIONS = [
+  { value: 'machine', label: 'Máquina' },
+  { value: 'tool', label: 'Ferramenta' },
+  { value: 'vehicle', label: 'Veículo' },
+  { value: 'infrastructure', label: 'Infraestrutura' },
+]
+
+const EMPTY_FORM = { name: '', code: '', category: 'machine', sector_id: '', status: 'operational' }
+
 export default function EquipmentListPage() {
   const [equipments, setEquipments] = useState<Equipment[]>([])
+  const [sectors, setSectors] = useState<Sector[]>([])
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({ name: '', code: '', sector: '', status: 'operational' })
+  const [formData, setFormData] = useState({ ...EMPTY_FORM })
 
   useEffect(() => {
     loadEquipments()
+    loadSectors()
   }, [])
 
   const loadEquipments = async () => {
@@ -36,18 +54,39 @@ export default function EquipmentListPage() {
     }
   }
 
+  const loadSectors = async () => {
+    try {
+      const data = await getSectors()
+      setSectors(data as Sector[])
+    } catch {
+      // ignore
+    }
+  }
+
+  const sectorName = (eq: Equipment) => {
+    const found = sectors.find(s => s.id === eq.sector_id)
+    return found?.name || eq.sector || '—'
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const payload = {
+        name: formData.name,
+        code: formData.code,
+        category: formData.category,
+        sector_id: formData.sector_id || null,
+        status: formData.status,
+      }
       if (editingId) {
-        await updateEquipment(editingId, formData)
+        await updateEquipment(editingId, payload)
         toast.success('Equipamento atualizado')
       } else {
-        await createEquipment(formData)
+        await createEquipment(payload)
         toast.success('Equipamento cadastrado')
       }
       await loadEquipments()
-      setFormData({ name: '', code: '', sector: '', status: 'operational' })
+      setFormData({ ...EMPTY_FORM })
       setEditingId(null)
       setShowForm(false)
     } catch (err: any) {
@@ -56,7 +95,13 @@ export default function EquipmentListPage() {
   }
 
   const handleEdit = (eq: Equipment) => {
-    setFormData({ name: eq.name, code: eq.code, sector: eq.sector, status: eq.status })
+    setFormData({
+      name: eq.name,
+      code: eq.code,
+      category: eq.category || 'machine',
+      sector_id: eq.sector_id || '',
+      status: eq.status,
+    })
     setEditingId(eq.id)
     setShowForm(true)
   }
@@ -93,7 +138,7 @@ export default function EquipmentListPage() {
               <CardTitle>{editingId ? 'Editar Equipamento' : 'Cadastrar Equipamento'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-4">
+              <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-5">
                 <div>
                   <Label>Nome</Label>
                   <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
@@ -103,8 +148,34 @@ export default function EquipmentListPage() {
                   <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required />
                 </div>
                 <div>
+                  <Label>Categoria</Label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                    required
+                  >
+                    {CATEGORY_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <Label>Setor</Label>
-                  <Input value={formData.sector} onChange={(e) => setFormData({ ...formData, sector: e.target.value })} required />
+                  <select
+                    value={formData.sector_id}
+                    onChange={(e) => setFormData({ ...formData, sector_id: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                    required
+                  >
+                    <option value="">Selecione um setor</option>
+                    {sectors.map(sector => (
+                      <option key={sector.id} value={sector.id}>{sector.name}</option>
+                    ))}
+                  </select>
+                  {sectors.length === 0 && (
+                    <p className="mt-1 text-xs text-amber-700">Nenhum setor cadastrado.</p>
+                  )}
                 </div>
                 <div>
                   <Label>Status</Label>
@@ -120,7 +191,7 @@ export default function EquipmentListPage() {
                     <option value="archived">Arquivado</option>
                   </select>
                 </div>
-                <div className="md:col-span-4 flex justify-end gap-2">
+                <div className="md:col-span-5 flex justify-end gap-2">
                   <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null) }}>Cancelar</Button>
                   <Button type="submit">{editingId ? 'Salvar' : 'Cadastrar'}</Button>
                 </div>
@@ -134,7 +205,7 @@ export default function EquipmentListPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Equipamentos</CardTitle>
               <div className="flex gap-2">
-                <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ name: '', code: '', sector: '', status: 'operational' }) }}>
+                <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ ...EMPTY_FORM }) }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Equipamento
                 </Button>
@@ -157,6 +228,7 @@ export default function EquipmentListPage() {
                   <tr className="border-b">
                     <th className="p-2 text-left">Código</th>
                     <th className="p-2 text-left">Nome</th>
+                    <th className="p-2 text-left">Categoria</th>
                     <th className="p-2 text-left">Setor</th>
                     <th className="p-2 text-left">Status</th>
                     <th className="p-2 text-left">Ações</th>
@@ -167,7 +239,8 @@ export default function EquipmentListPage() {
                     <tr key={eq.id} className="border-b">
                       <td className="p-2">{eq.code}</td>
                       <td className="p-2">{eq.name}</td>
-                      <td className="p-2">{eq.sector}</td>
+                      <td className="p-2">{CATEGORY_OPTIONS.find(c => c.value === eq.category)?.label || eq.category || '—'}</td>
+                      <td className="p-2">{sectorName(eq)}</td>
                       <td className="p-2">
                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                           eq.status === 'operational' ? 'bg-brand/10 text-brand' :
@@ -196,7 +269,7 @@ export default function EquipmentListPage() {
                   ))}
                   {filteredEquipments.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-4 text-center text-muted-foreground">
+                      <td colSpan={6} className="p-4 text-center text-muted-foreground">
                         Nenhum equipamento encontrado
                       </td>
                     </tr>
