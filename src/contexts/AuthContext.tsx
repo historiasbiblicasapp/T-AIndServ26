@@ -33,6 +33,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Remove tokens locais de sessões corrompidas/expiradas sem depender da rede,
+  // evitando que requisições sigam com um JWT inválido (causa de erros 401).
+  const clearInvalidSession = async () => {
+    try {
+      await getSupabaseClient().auth.signOut({ scope: 'local' })
+    } catch {
+      // ignora: o objetivo é apenas limpar o estado local
+    }
+  }
+
   useEffect(() => {
     let mounted = true
 
@@ -45,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Erro ao carregar sessão do Supabase:', error)
+        await clearInvalidSession()
         if (mounted) setUser(null)
       } finally {
         if (mounted) setIsLoading(false)
@@ -53,8 +64,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     loadSession()
 
-    const { data: { subscription } } = getSupabaseClient().auth.onAuthStateChange((_event, session) => {
-      if (mounted) setUser(session ? mapSupabaseUser(session.user) : null)
+    const { data: { subscription } } = getSupabaseClient().auth.onAuthStateChange((event, session) => {
+      if (!mounted) return
+      const eventName = event as string
+      if (eventName === 'TOKEN_REFRESH_FAILED' || eventName === 'SIGNED_OUT') {
+        // Refresh falhou (token expirado/rede): limpa a sessão inválida
+        void clearInvalidSession()
+        setUser(null)
+        return
+      }
+      setUser(session ? mapSupabaseUser(session.user) : null)
     })
 
     return () => {
